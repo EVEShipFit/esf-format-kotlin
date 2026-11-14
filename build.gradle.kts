@@ -42,6 +42,7 @@ val esfCatalog = layout.projectDirectory.file("esf-format/tests/catalog.json")
 tasks.test {
     useJUnitPlatform()
     environment("ESF_CATALOG", providers.environmentVariable("ESF_CATALOG").getOrElse(esfCatalog.asFile.path))
+    providers.environmentVariable("ESF_SDE").orNull?.let { environment("ESF_SDE", it) }
 }
 
 val program by tasks.registering {

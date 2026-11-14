@@ -107,7 +107,8 @@ TypeRecord(
 )
 ```
 
-[JsonCatalog.kt](https://github.com/EVEShipFit/esf-format-kotlin/blob/main/src/test/kotlin/fit/eveship/esf/JsonCatalog.kt) is a complete example.
+[SdeJsonlCatalog.kt](https://github.com/EVEShipFit/esf-format-kotlin/blob/main/src/test/kotlin/fit/eveship/esf/SdeJsonlCatalog.kt)
+is a complete example on the official SDE in JSONL: copy it into your project.
 
 ## Tests
 
@@ -119,4 +120,10 @@ git clone --branch v1.0 https://github.com/EVEShipFit/esf-format
 uv run --project esf-format/tools esf-test -- build/program
 ./gradlew ktlintCheck
 ./gradlew test koverLog
+```
+
+To also run the cases on the official SDE, unpack it and set `ESF_SDE`:
+
+```
+ESF_SDE=path/to/sde ./gradlew test
 ```
