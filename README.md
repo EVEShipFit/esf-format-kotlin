@@ -77,9 +77,9 @@ up types and attributes in your copy of the SDE.
 
 ```kotlin
 class MyCatalog : Catalog {
-    override fun type(folded: String): TypeRecord? = ...
+    override fun type(foldedName: String): TypeRecord? = ...
     override fun typeById(typeId: Int): TypeRecord? = ...
-    override fun attribute(folded: String): AttributeRecord? = ...
+    override fun attribute(foldedName: String): AttributeRecord? = ...
     override fun attributeById(attributeId: Int): AttributeRecord? = ...
 
     // Optional. Without them, no hull has tactical modes and no type has mutaplasmids.
@@ -88,8 +88,25 @@ class MyCatalog : Catalog {
 }
 ```
 
-Names are looked up folded: index them with `Esf.fold(name)`. Where
-names are shared, published wins, then the lowest ID (§4.2).
+Each method and field says what to return and where in the SDE it comes
+from. `Sde` has helpers for the parts that take more than a lookup:
+
+```kotlin
+val typeNames = Sde.nameIndex(types, { it.id }, { it.name.en }, { it.published })
+
+// effects: effectID -> effectCategoryID; attributes: attributeID -> value
+
+TypeRecord(
+    id = t.id,
+    name = t.name.en,
+    kind = Sde.kind(group.categoryID, t.groupID, effects.keys),
+    active = Sde.active(effects),
+    capacity = t.capacity ?: 0.0,
+    volume = t.volume ?: 0.0,
+    squadronSize = Sde.squadronSize(attributes),
+)
+```
+
 [JsonCatalog.kt](https://github.com/EVEShipFit/esf-format-kotlin/blob/main/src/test/kotlin/fit/eveship/esf/JsonCatalog.kt) is a complete example.
 
 ## Tests

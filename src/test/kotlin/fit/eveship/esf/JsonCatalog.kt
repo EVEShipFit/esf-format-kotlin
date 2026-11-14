@@ -40,8 +40,20 @@ class JsonCatalog(
                     )
             }
         attributes = attributeList.associate { it.int("id") to AttributeRecord(it.int("id"), it.string("name")) }
-        typeNames = byName(typeList)
-        attributeNames = byName(attributeList)
+        typeNames =
+            Sde.nameIndex(
+                typeList,
+                { it.int("id") },
+                { it.string("name") },
+                { it.getValue("published").jsonPrimitive.boolean },
+            )
+        attributeNames =
+            Sde.nameIndex(
+                attributeList,
+                { it.int("id") },
+                { it.string("name") },
+                { it.getValue("published").jsonPrimitive.boolean },
+            )
         modes =
             data.list("modes").associate { m ->
                 m.int("hull") to m.getValue("modes").jsonArray.map { types.getValue(it.jsonPrimitive.int) }
@@ -57,11 +69,11 @@ class JsonCatalog(
             }
     }
 
-    override fun type(folded: String): TypeRecord? = typeNames[folded]?.let(types::get)
+    override fun type(foldedName: String): TypeRecord? = typeNames[foldedName]?.let(types::get)
 
     override fun typeById(typeId: Int): TypeRecord? = types[typeId]
 
-    override fun attribute(folded: String): AttributeRecord? = attributeNames[folded]?.let(attributes::get)
+    override fun attribute(foldedName: String): AttributeRecord? = attributeNames[foldedName]?.let(attributes::get)
 
     override fun attributeById(attributeId: Int): AttributeRecord? = attributes[attributeId]
 
@@ -75,14 +87,5 @@ class JsonCatalog(
         fun JsonObject.int(key: String): Int = getValue(key).jsonPrimitive.int
 
         fun JsonObject.string(key: String): String = getValue(key).jsonPrimitive.content
-
-        /** Where names are shared, published wins, then the lowest ID (§4.2). */
-        fun byName(entries: List<JsonObject>): Map<String, Int> {
-            val index = mutableMapOf<String, Int>()
-            entries
-                .sortedWith(compareBy({ !it.getValue("published").jsonPrimitive.boolean }, { it.int("id") }))
-                .forEach { index.putIfAbsent(Esf.fold(it.string("name")), it.int("id")) }
-            return index
-        }
     }
 }
