@@ -24,27 +24,28 @@ public enum class State {
  * An item goes where its [Kind] says, so most entries leave this null. Set it to store an
  * item somewhere else, like a spare Damage Control II in [CARGO].
  *
- * The racks, [HIGH] to [SVC], are only for empty slots. An item never names its rack.
+ * The racks, [HIGH] to [SVC], are for empty slots, and for an item put in a given
+ * [Entry.slot]. Otherwise, an item never names its rack.
  * The holds, [AMMO] to [SUBSYSTEM], only make sense on a hull that has that hold, but the
  * library does not check that.
  */
 public enum class Location {
-    /** The high slot rack, for an empty slot. */
+    /** The high slot rack. */
     HIGH,
 
-    /** The mid slot rack, for an empty slot. */
+    /** The mid slot rack. */
     MID,
 
-    /** The low slot rack, for an empty slot. */
+    /** The low slot rack. */
     LOW,
 
-    /** The rig rack, for an empty slot. */
+    /** The rig rack. */
     RIG,
 
-    /** The subsystem rack, for an empty slot. Not the same as [SUBSYSTEM], which is a hold. */
+    /** The subsystem rack. Not the same as [SUBSYSTEM], which is a hold. */
     SUB,
 
-    /** The structure service rack, for an empty slot. */
+    /** The structure service rack. */
     SVC,
 
     /** The cargo hold. */
@@ -115,7 +116,8 @@ public enum class Location {
  * One line of a fit: an item, an empty slot, or another fit carried by this one.
  *
  * Only [type] is needed; every other field is null or empty when it is the default.
- * Entries can be in any order, except within a rack: there, the order is the slot order.
+ * Entries can be in any order, except within a rack: there, the order is the slot order,
+ * unless an entry sets [slot].
  */
 public data class Entry
     @JvmOverloads
