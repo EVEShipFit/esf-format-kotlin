@@ -37,6 +37,10 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
+sourceSets.test {
+    kotlin.srcDir("examples")
+}
+
 val esfCatalog = layout.projectDirectory.file("esf-format/tests/catalog.json")
 
 tasks.test {

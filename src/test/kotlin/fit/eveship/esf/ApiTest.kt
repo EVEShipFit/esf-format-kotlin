@@ -179,11 +179,11 @@ class ApiTest {
     fun catalogWithoutOptionalLookups(line: String) {
         val minimal =
             object : Catalog {
-                override fun type(folded: String) = catalog.type(folded)
+                override fun type(foldedName: String) = catalog.type(foldedName)
 
                 override fun typeById(typeId: Int) = catalog.typeById(typeId)
 
-                override fun attribute(folded: String) = catalog.attribute(folded)
+                override fun attribute(foldedName: String) = catalog.attribute(foldedName)
 
                 override fun attributeById(attributeId: Int) = catalog.attributeById(attributeId)
             }
