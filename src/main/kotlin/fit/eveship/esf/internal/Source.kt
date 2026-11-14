@@ -118,8 +118,14 @@ private fun entry(
     if ((e.count != null && e.count < 1) || (e.chargeCount != null && e.chargeCount < 1)) {
         throw EsfException("a count must be at least 1")
     }
-    if (e.type != null && e.location != null && Place.valueOf(e.location.name).isRack) {
-        throw EsfException("a rack location is only for an empty slot")
+    if (e.slot != null && e.slot < 1) {
+        throw EsfException("a slot must be at least 1")
+    }
+    if (e.slot != null && (e.location == null || !Place.valueOf(e.location.name).isRack)) {
+        throw EsfException("a slot needs the rack it is in")
+    }
+    if (e.type != null && e.slot == null && e.location != null && Place.valueOf(e.location.name).isRack) {
+        throw EsfException("an item names a rack only to pin a slot")
     }
     if (e.chargeCount != null && e.charge == null) {
         throw EsfException("a charge count is set without a charge")
@@ -144,7 +150,7 @@ private fun entry(
         parts.add(pairs.joinToString(", ", "{", "}"))
     }
     e.state?.let { parts.add("!" + it.name.lowercase()) }
-    e.location?.let { parts.add("@" + it.name.lowercase()) }
+    e.location?.let { parts.add("@" + it.name.lowercase() + (e.slot ?: "")) }
     return parts.joinToString(" ")
 }
 

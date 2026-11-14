@@ -226,6 +226,43 @@ class ApiTest {
     }
 
     @Test
+    fun saveSlots() {
+        val pinned =
+            fit(
+                Entry(AUTOCANNON),
+                Entry(AUTOCANNON, location = Location.HIGH, slot = 3),
+                Entry(null, location = Location.LOW, slot = 1),
+                Entry(DAMAGE_CONTROL),
+            )
+        val text = Esf.save(listOf(pinned), catalog)
+        assertEquals(
+            """
+            %esf/1
+            Rifter
+
+            200mm AutoCannon II
+            - @high
+            200mm AutoCannon II
+
+            - @low
+            Damage Control II
+
+            """.trimIndent(),
+            text,
+        )
+        assertEquals(
+            listOf(
+                Entry(AUTOCANNON),
+                Entry(null, location = Location.HIGH),
+                Entry(AUTOCANNON),
+                Entry(null, location = Location.LOW),
+                Entry(DAMAGE_CONTROL),
+            ),
+            Esf.load(text, catalog).single().entries,
+        )
+    }
+
+    @Test
     fun fold() {
         assertEquals("damage control ii", Esf.fold("Damage Control II"))
         assertEquals("ärger σσ", Esf.fold("ÄRGER Σς"))
@@ -253,7 +290,38 @@ class ApiTest {
                 arguments(
                     "rack-on-item",
                     listOf(fit(Entry(AUTOCANNON, location = Location.HIGH))),
-                    "only for an empty slot",
+                    "only to pin a slot",
+                ),
+                arguments(
+                    "slot-zero",
+                    listOf(fit(Entry(AUTOCANNON, location = Location.HIGH, slot = 0))),
+                    "at least 1",
+                ),
+                arguments("slot-without-rack", listOf(fit(Entry(AUTOCANNON, slot = 1))), "needs the rack"),
+                arguments(
+                    "slot-with-count",
+                    listOf(fit(Entry(AUTOCANNON, count = 2, location = Location.HIGH, slot = 1))),
+                    "mutually exclusive",
+                ),
+                arguments(
+                    "slot-wrong-rack",
+                    listOf(fit(Entry(AUTOCANNON, location = Location.LOW, slot = 1))),
+                    "does not go in the low rack",
+                ),
+                arguments(
+                    "slot-on-hold",
+                    listOf(fit(Entry(EMP, location = Location.CARGO, slot = 1))),
+                    "needs the rack",
+                ),
+                arguments(
+                    "slot-twice",
+                    listOf(
+                        fit(
+                            Entry(AUTOCANNON, location = Location.HIGH, slot = 1),
+                            Entry(AUTOCANNON, location = Location.HIGH, slot = 1),
+                        ),
+                    ),
+                    "pinned twice",
                 ),
                 arguments("charge-count-alone", listOf(fit(Entry(AUTOCANNON, chargeCount = 10))), "without a charge"),
                 arguments(

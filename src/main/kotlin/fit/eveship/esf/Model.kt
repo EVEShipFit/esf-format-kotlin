@@ -172,6 +172,13 @@ public data class Entry
         val state: State? = null,
         /** Where the item goes. Null means where its type goes by default; see [Location]. */
         val location: Location? = null,
+        /**
+         * The slot in the [location] rack, counting from 1, like 3 for the third high slot.
+         *
+         * Set [location] to the rack too. Null means the next free slot. [Esf.load] never sets
+         * this: it gives the rack in slot order, with empty slots in between.
+         */
+        val slot: Long? = null,
     )
 
 /**
