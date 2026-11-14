@@ -107,7 +107,7 @@ TypeRecord(
 )
 ```
 
-[SdeJsonlCatalog.kt](https://github.com/EVEShipFit/esf-format-kotlin/blob/main/src/test/kotlin/fit/eveship/esf/SdeJsonlCatalog.kt)
+[SdeJsonlCatalog.kt](https://github.com/EVEShipFit/esf-format-kotlin/blob/main/examples/SdeJsonlCatalog.kt)
 is a complete example on the official SDE in JSONL: copy it into your project.
 
 ## Tests

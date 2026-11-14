@@ -1,5 +1,6 @@
 package fit.eveship.esf
 
+import example.SdeJsonlCatalog
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 import java.io.File

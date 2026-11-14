@@ -1,5 +1,11 @@
-package fit.eveship.esf
+package example
 
+import fit.eveship.esf.AttributeRecord
+import fit.eveship.esf.Catalog
+import fit.eveship.esf.Kind
+import fit.eveship.esf.MutaplasmidRecord
+import fit.eveship.esf.Sde
+import fit.eveship.esf.TypeRecord
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.boolean
