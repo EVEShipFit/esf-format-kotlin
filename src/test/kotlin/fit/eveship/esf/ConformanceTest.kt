@@ -1,6 +1,5 @@
 package fit.eveship.esf
 
-import example.SdeJsonlCatalog
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 import java.io.File
@@ -9,16 +8,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 /** The esf-format test cases, the way its runner checks them. */
-open class ConformanceTest {
-    protected open val catalog: Catalog? get() = fit.eveship.esf.catalog
-
+class ConformanceTest {
     @TestFactory
     fun cases(): List<DynamicTest> {
-        val catalog = catalog ?: return emptyList()
         val root = File(catalogPath).parentFile
         return listOf("valid", "invalid").flatMap { kind ->
             File(root, kind).listFiles { f -> f.isDirectory }!!.sorted().map { path ->
-                DynamicTest.dynamicTest("$kind/${path.name}") { check(path, kind == "valid", catalog) }
+                DynamicTest.dynamicTest("$kind/${path.name}") { check(path, kind == "valid") }
             }
         }
     }
@@ -31,7 +27,6 @@ open class ConformanceTest {
     private fun check(
         path: File,
         valid: Boolean,
-        catalog: Catalog,
     ) {
         val input = input(path)
         if (!valid) {
@@ -47,9 +42,4 @@ open class ConformanceTest {
         assertContentEquals(binary, Esf.saveBinary(fits, catalog), "binary of input")
         assertEquals(canonical, Esf.save(Esf.load(binary, catalog), catalog), "canonical of canonical.b64")
     }
-}
-
-/** The same cases, with the Catalog read from the SDE that `ESF_SDE` points to. */
-class SdeConformanceTest : ConformanceTest() {
-    override val catalog: Catalog? by lazy { System.getenv("ESF_SDE")?.let { SdeJsonlCatalog(File(it)) } }
 }

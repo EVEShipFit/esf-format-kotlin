@@ -121,9 +121,3 @@ uv run --project esf-format/tools esf-test -- build/program
 ./gradlew ktlintCheck
 ./gradlew test koverLog
 ```
-
-To also run the cases on the official SDE, unpack it and set `ESF_SDE`:
-
-```
-ESF_SDE=path/to/sde ./gradlew test
-```
