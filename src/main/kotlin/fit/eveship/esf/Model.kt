@@ -26,8 +26,8 @@ public enum class State {
  * So a drone with no location is out in space, and a fighter is in a launch tube. Set
  * [BAY] to keep either one in its bay.
  *
- * The racks, [HIGH] to [SVC], are for empty slots, and for an item put in a given
- * [Entry.slot]. Otherwise, an item never names its rack.
+ * The racks, [HIGH] to [SVC] and [TUBE], are for empty slots, and for an item put in a
+ * given [Entry.slot]. Otherwise, an item never names its rack.
  * The holds, [AMMO] to [SUBSYSTEM], only make sense on a hull that has that hold, but the
  * library does not check that.
  */
@@ -112,6 +112,9 @@ public enum class Location {
 
     /** The Subsystem Hold, for spare subsystems. Not the same as [SUB], which is the rack. */
     SUBSYSTEM,
+
+    /** The fighter launch tubes. Only fighters go in a tube, one squadron per tube. */
+    TUBE,
 }
 
 /**
@@ -181,6 +184,9 @@ public data class Entry
          *
          * Set [location] to the rack too. Null means the next free slot. [Esf.load] never sets
          * this: it gives the rack in slot order, with empty slots in between.
+         *
+         * For a fighter, the rack is [Location.TUBE] and this is the launch tube. [count] is
+         * then the squadron's size. In any other rack, an entry with a slot takes no count.
          */
         val slot: Long? = null,
     )

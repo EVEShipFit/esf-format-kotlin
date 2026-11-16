@@ -281,7 +281,7 @@ private fun layout(items: List<Placed>): List<Run> {
         if (item.line.index != null) {
             continue
         }
-        var remaining = item.line.count ?: 1
+        var remaining = if (item is Item && item.place == Place.TUBE) 1 else item.line.count ?: 1
         while (remaining > 0) {
             while (pos in pinned) {
                 pos++

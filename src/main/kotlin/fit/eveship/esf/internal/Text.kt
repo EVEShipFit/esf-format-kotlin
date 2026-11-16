@@ -229,7 +229,7 @@ private fun entry(cur: Cursor): Line {
                 if (index == null && !location.isStored) {
                     cur.error("an item names a rack only to pin a slot, which needs an index")
                 }
-                if (index != null && count != null) {
+                if (index != null && count != null && location != Place.TUBE) {
                     cur.error("a count and a pinned slot are mutually exclusive")
                 }
                 line.location = location

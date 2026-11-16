@@ -107,7 +107,7 @@ internal fun canonicalFit(
         val group =
             when {
                 item.place != Place.BAY -> item.place
-                item.type.kind == Kind.FIGHTER -> Place.FIGHTERS
+                item.type.kind == Kind.FIGHTER -> Place.TUBE
                 else -> Place.DRONES
             }
         byGroup.getOrPut(group) { mutableListOf() }.add(item)
@@ -118,9 +118,9 @@ internal fun canonicalFit(
             .map { group ->
                 val items = byGroup[group].orEmpty()
                 when {
+                    group == Place.TUBE -> rack(fit, group, catalog) + sorted(items, fit, catalog)
                     group.isRack -> rack(fit, group, catalog)
                     group == Place.DRONES -> drones(items, fit, catalog)
-                    group == Place.FIGHTERS -> fighters(items, fit, catalog)
                     else -> sorted(items, fit, catalog)
                 }
             }.filter { it.isNotEmpty() }
@@ -211,7 +211,7 @@ private class Collapsible(
 
 /** Merge adjacent identical repeatable lines into one count. */
 private fun collapse(lines: List<Collapsible>): List<CanonLine> {
-    val out = mutableListOf<CanonLine>()
+    val out = mutableListOf<Collapsible>()
     var last: CanonLine? = null
     var lastBody: String? = null
     for (next in lines) {
@@ -227,10 +227,10 @@ private fun collapse(lines: List<Collapsible>): List<CanonLine> {
         }
         last = line
         lastBody = body
-        out.add(line)
+        out.add(next)
     }
-    out.filter { it.count == 1L }.forEach { it.count = null }
-    return out
+    out.filter { it.repeatable && it.line.count == 1L }.forEach { it.line.count = null }
+    return out.map { it.line }
 }
 
 private fun rack(
@@ -241,7 +241,13 @@ private fun rack(
     val runs = fit.racks[rack].orEmpty().dropLastWhile { it.item == null }
     return collapse(
         runs.map { run ->
-            val line = run.item?.let { line(it, fit, catalog) } ?: CanonLine(null, location = rack)
+            val item = run.item
+            if (item != null && rack == Place.TUBE) {
+                val line = line(item, fit, catalog)
+                line.count = item.line.count?.takeIf { it != item.type.squadronSize?.toLong() }
+                return@map Collapsible(line, false)
+            }
+            val line = item?.let { line(it, fit, catalog) } ?: CanonLine(null, location = rack)
             line.count = run.length
             Collapsible(line, true)
         },
@@ -280,21 +286,6 @@ private fun sorted(
                 ?: compareUtf8(a.text, b.text)
         }
     return collapse(lines.sortedWith(order).map { it.line })
-}
-
-private fun fighters(
-    items: List<Item>,
-    fit: Fit,
-    catalog: Catalog,
-): List<CanonLine> {
-    val (tubes, bay) = items.partition { it.place == Place.FIGHTERS }
-    val lines =
-        tubes.map { item ->
-            line(item, fit, catalog).apply {
-                count = item.line.count?.takeIf { it != item.type.squadronSize?.toLong() }
-            }
-        }
-    return lines + sorted(bay, fit, catalog)
 }
 
 private fun drones(
