@@ -15,13 +15,14 @@ import fit.eveship.esf.TypeRecord
 
 internal class CanonFit(
     val hull: TypeRecord?,
+    val hullText: String,
     val name: String?,
     val mode: TypeRecord?,
     val modeText: String?,
     val groups: List<List<CanonLine>>,
 ) {
     fun appendTo(out: StringBuilder) {
-        out.append("%esf/1\n").append(hull?.let { quoteType(it.name) } ?: "-")
+        out.append("%esf/1\n").append(hullText)
         name?.let { out.append(' ').append(quote(it)) }
         modeText?.let { out.append(" /").append(quoteType(it)) }
         out.append('\n')
@@ -36,11 +37,13 @@ internal class CanonFit(
 
 internal class CanonLine(
     val type: TypeRecord?,
+    val typeText: String,
     var count: Long? = null,
     val location: Place? = null,
 ) {
     var fitName: String? = null
     var charge: TypeRecord? = null
+    var chargeText: String? = null
     var chargeCount: Long? = null
     var mutaplasmid: MutaplasmidRecord? = null
     var mutaplasmidName: String? = null
@@ -49,12 +52,12 @@ internal class CanonLine(
 
     fun body(): String =
         buildString {
-            append(type?.let { quoteType(it.name) } ?: "-")
+            append(typeText)
             fitName?.let { append(' ').append(quote(it)) }
-            charge?.let {
+            chargeText?.let {
                 append(" :")
                 chargeCount?.let { count -> append(count).append("x ") }
-                append(quoteType(it.name))
+                append(it)
             }
             mutaplasmidName?.let { append(" +").append(quoteType(it)) }
             if (overrides.isNotEmpty()) {
@@ -87,13 +90,19 @@ internal fun quote(s: String): String = "\"" + s.replace("\"", "\"\"") + "\""
 internal fun needsQuotes(name: String): Boolean {
     val words = name.split(' ')
     val first = words[0].firstOrNull()
-    if (first == null || first == '-' || first == '%' || isCount(words[0])) {
+    if (first == null || first == '-' || first == '%' || isCount(words[0]) || isTypeId(name)) {
         return true
     }
     return words.any { it.isEmpty() || it[0] in SIGILS }
 }
 
 internal fun quoteType(name: String): String = if (needsQuotes(name)) quote(name) else name
+
+/** A type as text: its name, or its ID where the name resolves to another type (§6.13). */
+internal fun typeRef(
+    catalog: Catalog,
+    type: TypeRecord,
+): String = if (catalog.type(fold(type.name))?.id == type.id) quoteType(type.name) else "#${type.id}"
 
 internal fun canonicalFit(
     fit: Fit,
@@ -134,7 +143,8 @@ internal fun canonicalFit(
             null
         }
 
-    return CanonFit(fit.hull, fit.name, fit.mode, modeText, groups)
+    val hullText = fit.hull?.let { typeRef(catalog, it) } ?: "-"
+    return CanonFit(fit.hull, hullText, fit.name, fit.mode, modeText, groups)
 }
 
 internal fun render(fits: List<CanonFit>): String =
@@ -159,11 +169,12 @@ private fun line(
 ): CanonLine {
     val line = item.line
     val location = item.place.takeIf { !it.isRack && it != Place.default(item.type.kind, fit.cargoOnly) }
-    val out = CanonLine(item.type, location = location)
+    val out = CanonLine(item.type, typeRef(catalog, item.type), location = location)
     out.fitName = item.reference?.name
 
     item.charge?.let { charge ->
         out.charge = charge
+        out.chargeText = typeRef(catalog, charge)
         if (line.chargeCount != null && line.chargeCount != fullLoad(item.type, charge)) {
             out.chargeCount = line.chargeCount
         }
@@ -247,7 +258,7 @@ private fun rack(
                 line.count = item.line.count?.takeIf { it != item.type.squadronSize?.toLong() }
                 return@map Collapsible(line, false)
             }
-            val line = item?.let { line(it, fit, catalog) } ?: CanonLine(null, location = rack)
+            val line = item?.let { line(it, fit, catalog) } ?: CanonLine(null, "-", location = rack)
             line.count = run.length
             Collapsible(line, true)
         },

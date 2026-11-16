@@ -21,6 +21,7 @@ private const val SCRAMBLER = 448
 private const val DAMAGE_CONTROL = 2048
 private const val HOBGOBLIN = 2456
 private const val DECAYED_DAMAGE_CONTROL_MUTAPLASMID = 52224
+private const val GRAVID_DAMAGE_CONTROL_MUTAPLASMID = 52225
 private const val AVATAR = 11567
 private const val AVATAR_UNPUBLISHED = 50097
 private const val SMALL_SECURE_CONTAINER = 3467
@@ -190,6 +191,37 @@ class ApiTest {
     fun sharedNamePublishedWins() {
         val text = Esf.save(listOf(fit(Entry(AVATAR, location = Location.CARGO))), catalog)
         assertTrue(text.endsWith("Avatar\n"))
+    }
+
+    @Test
+    fun sharedNameByTypeId() {
+        val fits = listOf(fit(Entry(AVATAR_UNPUBLISHED)))
+        val text = Esf.save(fits, catalog)
+        assertEquals("%esf/1\nRifter\n\n#50097\n", text)
+        assertEquals(fits, Esf.load(text, catalog))
+        assertEquals(fits, Esf.load(Esf.saveBinary(fits, catalog), catalog))
+    }
+
+    @Test
+    fun saveShadowedMutaplasmid() {
+        val decayed = catalog.typeById(DECAYED_DAMAGE_CONTROL_MUTAPLASMID)!!
+        val shadowed =
+            object : Catalog by catalog {
+                override fun typeById(typeId: Int) =
+                    when (typeId) {
+                        GRAVID_DAMAGE_CONTROL_MUTAPLASMID -> decayed.copy(id = typeId)
+                        else -> catalog.typeById(typeId)
+                    }
+            }
+        val fits = listOf(fit(Entry(DAMAGE_CONTROL, mutaplasmid = GRAVID_DAMAGE_CONTROL_MUTAPLASMID)))
+        val e = assertFailsWith<EsfException> { Esf.save(fits, shadowed) }
+        assertContains(e.message!!, "mutaplasmid ID 52225 is not what its name resolves to (52224)")
+    }
+
+    @Test
+    fun loadTypeId() {
+        val fits = Esf.load("%esf/1\n#587\n#2889 :#21898\n", catalog)
+        assertEquals(listOf(fit(Entry(AUTOCANNON, charge = EMP))), fits)
     }
 
     @ParameterizedTest(name = "{0}")
@@ -413,11 +445,6 @@ class ApiTest {
                     "not finite",
                 ),
                 arguments(
-                    "id-shadowed",
-                    listOf(fit(Entry(AVATAR_UNPUBLISHED, location = Location.CARGO))),
-                    "not what its name resolves to",
-                ),
-                arguments(
                     "override-ids-shadowed",
                     listOf(fit(Entry(DAMAGE_CONTROL, overrides = mapOf(2795 to 1.0)))),
                     "resolve to",
@@ -446,6 +473,14 @@ class ApiTest {
                     "merged-count-too-large",
                     "%esf/1\nRifter\n${"4294967295x Damage Control II\n".repeat(2)}".encodeToByteArray(),
                     "too large",
+                ),
+                arguments("type-id-huge", "%esf/1\nRifter\n#4294967296\n".encodeToByteArray(), "type ID is too large"),
+                arguments("type-id-unknown", "%esf/1\nRifter\n#999999999\n".encodeToByteArray(), "unknown type ID"),
+                arguments("type-id-largest", "%esf/1\nRifter\n#4294967295\n".encodeToByteArray(), "unknown type ID"),
+                arguments(
+                    "type-id-long",
+                    "%esf/1\nRifter\n#12345678901234567890\n".encodeToByteArray(),
+                    "type ID is too large",
                 ),
             )
     }

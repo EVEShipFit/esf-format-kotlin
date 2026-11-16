@@ -92,9 +92,19 @@ internal fun resolve(
 
 private fun type(
     catalog: Catalog,
-    name: String,
+    ref: TypeRef,
     line: Int,
-): TypeRecord = catalog.type(fold(name)) ?: throw EsfCatalogException("unknown type '$name'", line)
+): TypeRecord =
+    when (ref) {
+        is TypeRef.Name -> {
+            catalog.type(fold(ref.name)) ?: throw EsfCatalogException("unknown type '${ref.name}'", line)
+        }
+
+        is TypeRef.Id -> {
+            ref.id.takeIf { it <= Int.MAX_VALUE }?.let { catalog.typeById(it.toInt()) }
+                ?: throw EsfCatalogException("unknown type ID #${ref.id}", line)
+        }
+    }
 
 private fun <T> pick(
     candidates: List<T>,
@@ -117,9 +127,9 @@ private fun hull(
     block: FitBlock,
     catalog: Catalog,
 ): Fit {
-    val hullName = block.hull ?: return Fit(block, null, null, true)
+    val hullRef = block.hull ?: return Fit(block, null, null, true)
 
-    val hull = type(catalog, hullName, block.hullLine)
+    val hull = type(catalog, hullRef, block.hullLine)
     if (!hull.kind.canBeHull) {
         throw EsfRuleException("'${hull.name}' is not a ship, structure or container", block.hullLine)
     }
@@ -152,7 +162,7 @@ private fun line(
     }
     line as ItemLine
 
-    val t = type(catalog, line.name, n)
+    val t = type(catalog, line.type, n)
     val kind = t.kind
     if (kind == Kind.MODE) {
         throw EsfRuleException("a tactical mode is only written on the hull line", n)
@@ -199,8 +209,8 @@ private fun line(
         }
     }
 
-    line.charge?.let { name ->
-        val charge = type(catalog, name, n)
+    line.charge?.let { ref ->
+        val charge = type(catalog, ref, n)
         if (charge.kind != Kind.CHARGE) {
             throw EsfRuleException("'${charge.name}' is not a charge", n)
         }

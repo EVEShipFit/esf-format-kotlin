@@ -45,6 +45,8 @@ class InternalTest {
         assertTrue(needsQuotes("%x"))
         assertTrue(needsQuotes("3x Damage Control"))
         assertTrue(needsQuotes("Damage  Control"))
+        assertTrue(needsQuotes("#85282"))
+        assertFalse(needsQuotes("#System"))
         assertTrue(needsQuotes("Damage @Control"))
     }
 
