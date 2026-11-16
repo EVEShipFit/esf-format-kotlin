@@ -11,7 +11,7 @@ internal enum class Place {
     RIG,
     SVC,
     DRONES,
-    FIGHTERS,
+    TUBE,
     CARGO,
     AMMO,
     BOOSTER,
@@ -38,7 +38,7 @@ internal enum class Place {
     ;
 
     val text = name.lowercase()
-    val isRack get() = this <= SVC
+    val isRack get() = this <= SVC || this == TUBE
     val isStored get() = this == BAY || this in CARGO..SUBSYSTEM
     val isPlugged get() = this == IMPLANTS || this == BOOSTERS
 
@@ -56,7 +56,7 @@ internal enum class Place {
                 Kind.RIG -> RIG
                 Kind.SVC -> SVC
                 Kind.DRONE -> DRONES
-                Kind.FIGHTER -> FIGHTERS
+                Kind.FIGHTER -> TUBE
                 Kind.IMPLANT -> IMPLANTS
                 Kind.BOOSTER -> BOOSTERS
                 else -> null

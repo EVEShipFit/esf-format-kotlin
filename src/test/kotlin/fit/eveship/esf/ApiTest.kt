@@ -24,6 +24,9 @@ private const val DECAYED_DAMAGE_CONTROL_MUTAPLASMID = 52224
 private const val AVATAR = 11567
 private const val AVATAR_UNPUBLISHED = 50097
 private const val SMALL_SECURE_CONTAINER = 3467
+private const val NYX = 23913
+private const val TEMPLAR = 40556
+private const val FIRBOLG = 40558
 
 private fun fit(vararg entries: Entry) = EsfFit(RIFTER, entries = entries.toList())
 
@@ -263,6 +266,44 @@ class ApiTest {
     }
 
     @Test
+    fun saveTubes() {
+        val carrier =
+            EsfFit(
+                NYX,
+                entries =
+                    listOf(
+                        Entry(TEMPLAR, count = 1, location = Location.TUBE, slot = 2),
+                        Entry(FIRBOLG, count = 6),
+                        Entry(null, location = Location.TUBE, slot = 4),
+                        Entry(TEMPLAR, location = Location.TUBE, slot = 5),
+                    ),
+            )
+        val text = Esf.save(listOf(carrier), catalog)
+        assertEquals(
+            """
+            %esf/1
+            Nyx
+
+            Firbolg II
+            1x Templar II
+            2x - @tube
+            Templar II
+
+            """.trimIndent(),
+            text,
+        )
+        assertEquals(
+            listOf(
+                Entry(FIRBOLG),
+                Entry(TEMPLAR, count = 1),
+                Entry(null, count = 2, location = Location.TUBE),
+                Entry(TEMPLAR),
+            ),
+            Esf.load(text, catalog).single().entries,
+        )
+    }
+
+    @Test
     fun fold() {
         assertEquals("damage control ii", Esf.fold("Damage Control II"))
         assertEquals("ärger σσ", Esf.fold("ÄRGER Σς"))
@@ -290,6 +331,11 @@ class ApiTest {
                 arguments(
                     "rack-on-item",
                     listOf(fit(Entry(AUTOCANNON, location = Location.HIGH))),
+                    "only to pin a slot",
+                ),
+                arguments(
+                    "tube-on-fighter",
+                    listOf(EsfFit(NYX, entries = listOf(Entry(TEMPLAR, location = Location.TUBE)))),
                     "only to pin a slot",
                 ),
                 arguments(
