@@ -119,7 +119,7 @@ private fun hull(
     val hullName = block.hull ?: return Fit(block, null, null, true)
 
     val hull = type(catalog, hullName, block.hullLine)
-    if (hull.kind != Kind.HULL && hull.kind != Kind.CONTAINER) {
+    if (!hull.kind.canBeHull) {
         throw EsfException("'${hull.name}' is not a ship, structure or container", block.hullLine)
     }
 
@@ -160,7 +160,7 @@ private fun line(
     val item = Item(line, t, Place.default(kind, fit.cargoOnly))
 
     line.fitName?.let { fitName ->
-        if (kind != Kind.HULL && kind != Kind.CONTAINER) {
+        if (!kind.canBeHull) {
             throw EsfException("'${t.name}' cannot take a fit name", n)
         }
         val matches = named[t.id to fold(fitName)].orEmpty()
