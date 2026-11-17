@@ -7,6 +7,7 @@ import fit.eveship.esf.EsfException
 import fit.eveship.esf.EsfFit
 import fit.eveship.esf.EsfFormatException
 import fit.eveship.esf.EsfRuleException
+import fit.eveship.esf.TypeRecord
 
 // Fits as the text they stand for, and the check that their IDs match it (SPEC §10.2).
 
@@ -98,14 +99,23 @@ private fun name(text: String): String {
     return quote(text)
 }
 
+private fun type(
+    catalog: Catalog,
+    typeId: Int,
+    what: String,
+): TypeRecord = catalog.typeById(typeId) ?: throw EsfCatalogException("unknown $what type ID $typeId")
+
 private fun typeName(
     catalog: Catalog,
     typeId: Int,
     what: String,
-): String {
-    val type = catalog.typeById(typeId) ?: throw EsfCatalogException("unknown $what type ID $typeId")
-    return quoteType(type.name)
-}
+): String = quoteType(type(catalog, typeId, what).name)
+
+private fun typeRef(
+    catalog: Catalog,
+    typeId: Int,
+    what: String,
+): String = typeRef(catalog, type(catalog, typeId, what))
 
 private fun number(value: Double): String {
     if (!value.isFinite()) {
@@ -136,11 +146,11 @@ private fun entry(
 
     val parts = mutableListOf<String>()
     e.count?.let { parts.add("${it}x") }
-    parts.add(e.type?.let { typeName(catalog, it, "item") } ?: "-")
+    parts.add(e.type?.let { typeRef(catalog, it, "item") } ?: "-")
     e.fitName?.takeIf { it.isNotEmpty() }?.let { parts.add(name(it)) }
     e.charge?.let { charge ->
         val count = e.chargeCount?.let { "${it}x " } ?: ""
-        parts.add(":" + count + typeName(catalog, charge, "charge"))
+        parts.add(":" + count + typeRef(catalog, charge, "charge"))
     }
     e.mutaplasmid?.let { parts.add("+" + typeName(catalog, it, "mutaplasmid")) }
     if (e.overrides.isNotEmpty()) {
@@ -161,7 +171,7 @@ private fun hull(
     fit: EsfFit,
     catalog: Catalog,
 ): String {
-    val parts = mutableListOf(fit.hull?.let { typeName(catalog, it, "hull") } ?: "-")
+    val parts = mutableListOf(fit.hull?.let { typeRef(catalog, it, "hull") } ?: "-")
     fit.name?.takeIf { it.isNotEmpty() }?.let { parts.add(name(it)) }
     fit.mode?.let { parts.add("/" + typeName(catalog, it, "tactical mode")) }
     return parts.joinToString(" ")

@@ -45,6 +45,10 @@ class InternalTest {
         assertTrue(needsQuotes("%x"))
         assertTrue(needsQuotes("3x Damage Control"))
         assertTrue(needsQuotes("Damage  Control"))
+        assertTrue(needsQuotes("Foo#123"))
+        assertFalse(needsQuotes("#85282"))
+        assertFalse(needsQuotes("Swarm Overmind #0102"))
+        assertFalse(needsQuotes("#System"))
         assertTrue(needsQuotes("Damage @Control"))
     }
 

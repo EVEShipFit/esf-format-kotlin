@@ -8,7 +8,7 @@ internal class FitBlock(
     val number: Int,
     val hullLine: Int,
 ) {
-    var hull: String? = null
+    var hull: TypeRef? = null
     var fitName: String? = null
     var mode: String? = null
     val lines = mutableListOf<Line>()
@@ -29,11 +29,11 @@ internal class EmptyLine(
 
 internal class ItemLine(
     override val number: Int,
-    val name: String,
+    val type: TypeRef,
     override val count: Long?,
 ) : Line {
     var fitName: String? = null
-    var charge: String? = null
+    var charge: TypeRef? = null
     var chargeCount: Long? = null
     var mutaplasmid: String? = null
     var overrides: List<Pair<String, String>> = emptyList()
@@ -41,3 +41,9 @@ internal class ItemLine(
     var location: Place? = null
     override var index: Long? = null
 }
+
+/** A type as written: its name, and the type ID after it if there is one (§6.13). */
+internal class TypeRef(
+    val name: String,
+    val id: Long? = null,
+)

@@ -141,7 +141,7 @@ private fun hull(
     if (isCount(cur.token())) {
         cur.error("the hull line cannot have a count")
     }
-    block.hull = cur.typeName()
+    block.hull = cur.typeRef()
     var more = cur.nextElement()
     if (more && cur.peek() == '"') {
         block.fitName = cur.quoted()
@@ -178,7 +178,7 @@ private fun entry(cur: Cursor): Line {
         return EmptyLine(cur.number, rack, count, index)
     }
 
-    val line = ItemLine(cur.number, cur.typeName(), count)
+    val line = ItemLine(cur.number, cur.typeRef(), count)
     var more = cur.nextElement()
 
     if (more && cur.peek() == '"') {
@@ -204,7 +204,7 @@ private fun entry(cur: Cursor): Line {
             c == ':' && stage < 1 -> {
                 cur.i++
                 line.chargeCount = cur.count()
-                line.charge = cur.typeName()
+                line.charge = cur.typeRef()
                 stage = 1
             }
 

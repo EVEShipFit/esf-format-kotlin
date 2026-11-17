@@ -9,6 +9,11 @@ internal const val UINT32_MAX = 0xFFFFFFFFL
 internal fun isCount(token: String): Boolean =
     token.length > 1 && token.last() == 'x' && token.dropLast(1).all { it in '0'..'9' }
 
+private val NAME_WITH_ID = Regex("(.*[^ ])#([0-9]+)", RegexOption.DOT_MATCHES_ALL)
+private val TYPE_ID = Regex("#([0-9]+)")
+
+internal fun endsInTypeId(name: String): Boolean = NAME_WITH_ID.matches(name)
+
 /** A position in one line of text (grammar.ebnf). */
 internal class Cursor(
     val number: Int,
@@ -129,6 +134,26 @@ internal class Cursor(
             }
             words.add(word())
         }
+    }
+
+    fun typeRef(): TypeRef {
+        if (peek() == '"') {
+            val name = quoted()
+            val match = TYPE_ID.matchAt(s, i) ?: return TypeRef(name)
+            i = match.range.last + 1
+            return TypeRef(name, typeId(match.groupValues[1]))
+        }
+        val name = typeName()
+        val match = NAME_WITH_ID.matchEntire(name) ?: return TypeRef(name)
+        return TypeRef(match.groupValues[1], typeId(match.groupValues[2]))
+    }
+
+    private fun typeId(written: String): Long {
+        val digits = written.trimStart('0').ifEmpty { "0" }
+        if (digits.length > 10 || digits.toLong() > UINT32_MAX) {
+            error("a type ID is too large")
+        }
+        return digits.toLong()
     }
 
     /** A location, and its slot number where it pins one. */
