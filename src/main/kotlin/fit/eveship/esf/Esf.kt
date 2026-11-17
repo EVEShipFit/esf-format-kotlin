@@ -29,7 +29,7 @@ public object Esf {
         catalog: Catalog,
     ): List<EsfFit> {
         if (data.isEmpty()) {
-            throw EsfException("the document is empty")
+            throw EsfFormatException("the document is empty")
         }
         val fits =
             if (isText(data)) {
@@ -70,7 +70,7 @@ public object Esf {
     public fun fromBase64Url(encoded: String): ByteArray {
         val trimmed = encoded.trim()
         if (trimmed.length % 4 == 1 || !trimmed.all { it in BASE64URL }) {
-            throw EsfException("not valid base64url")
+            throw EsfFormatException("not valid base64url")
         }
         return Base64.getUrlDecoder().decode(trimmed)
     }
@@ -101,7 +101,7 @@ public object Esf {
         } catch (e: EsfException) {
             val line = e.lineNumber ?: throw e
             val at = where[line - 1]
-            throw EsfException(e.reason, fitNumber = at.fit, entryNumber = at.entry)
+            throw e.at(at.fit, at.entry)
         }
     }
 }

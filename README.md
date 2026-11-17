@@ -47,8 +47,16 @@ val bytes = Esf.fromBase64Url(url)
 
 `save()` and `saveBinary()` take entries in any order, and check every rule
 of the spec. `load()` returns fits in canonical form. All three throw
-`EsfException` when a rule is broken. It says where: `lineNumber` for text, or
+`EsfException` when the data or a fit is not valid. It says where: `lineNumber` for text, or
 `fitNumber` and `entryNumber` (counting from 1) for fits.
+
+Catch a subclass to handle one kind of error:
+
+| Exception | When |
+|---|---|
+| `EsfFormatException` | The data is not a well-formed document: broken text, binary or base64url, or a fit name that cannot be written. |
+| `EsfCatalogException` | The catalog does not know a name or ID, or a name matches more than one type. |
+| `EsfRuleException` | The fit breaks a rule, like a module in the wrong rack. |
 
 ## Fits
 

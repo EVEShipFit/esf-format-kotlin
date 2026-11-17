@@ -2,7 +2,8 @@ package fit.eveship.esf.internal
 
 import fit.eveship.esf.AttributeRecord
 import fit.eveship.esf.Catalog
-import fit.eveship.esf.EsfException
+import fit.eveship.esf.EsfCatalogException
+import fit.eveship.esf.EsfRuleException
 import fit.eveship.esf.Kind
 import fit.eveship.esf.MutaplasmidRecord
 import fit.eveship.esf.State
@@ -77,7 +78,7 @@ internal fun resolve(
         val plugged = mutableSetOf<Int>()
         for (item in fit.items) {
             if (item is Item && item.place.isPlugged && !plugged.add(item.type.id)) {
-                throw EsfException("'${item.type.name}' is plugged in twice", item.line.number)
+                throw EsfRuleException("'${item.type.name}' is plugged in twice", item.line.number)
             }
         }
     }
@@ -93,7 +94,7 @@ private fun type(
     catalog: Catalog,
     name: String,
     line: Int,
-): TypeRecord = catalog.type(fold(name)) ?: throw EsfException("unknown type '$name'", line)
+): TypeRecord = catalog.type(fold(name)) ?: throw EsfCatalogException("unknown type '$name'", line)
 
 private fun <T> pick(
     candidates: List<T>,
@@ -103,11 +104,11 @@ private fun <T> pick(
     line: Int,
 ): T {
     if (candidates.isEmpty()) {
-        throw EsfException("no $what matches '$given'", line)
+        throw EsfCatalogException("no $what matches '$given'", line)
     }
     if (candidates.size > 1) {
         val names = candidates.joinToString(", ") { "'${name(it)}'" }
-        throw EsfException("'$given' matches more than one $what: $names", line)
+        throw EsfCatalogException("'$given' matches more than one $what: $names", line)
     }
     return candidates.single()
 }
@@ -120,14 +121,14 @@ private fun hull(
 
     val hull = type(catalog, hullName, block.hullLine)
     if (!hull.kind.canBeHull) {
-        throw EsfException("'${hull.name}' is not a ship, structure or container", block.hullLine)
+        throw EsfRuleException("'${hull.name}' is not a ship, structure or container", block.hullLine)
     }
 
     val mode =
         block.mode?.let { given ->
             val modes = catalog.modes(hull.id)
             if (modes.isEmpty()) {
-                throw EsfException("'${hull.name}' has no tactical modes", block.hullLine)
+                throw EsfRuleException("'${hull.name}' has no tactical modes", block.hullLine)
             }
             val matches = modes.filter { isWordPrefix(given, it.name) || isWordPrefix(given, modeName(hull, it)) }
             pick(matches, TypeRecord::name, given, "tactical mode of '${hull.name}'", block.hullLine)
@@ -145,7 +146,7 @@ private fun line(
     val n = line.number
     if (line is EmptyLine) {
         if (fit.cargoOnly) {
-            throw EsfException("a fit without a ship has no slots to keep empty", n)
+            throw EsfRuleException("a fit without a ship has no slots to keep empty", n)
         }
         return EmptySlot(line)
     }
@@ -154,54 +155,54 @@ private fun line(
     val t = type(catalog, line.name, n)
     val kind = t.kind
     if (kind == Kind.MODE) {
-        throw EsfException("a tactical mode is only written on the hull line", n)
+        throw EsfRuleException("a tactical mode is only written on the hull line", n)
     }
 
     val item = Item(line, t, Place.default(kind, fit.cargoOnly))
 
     line.fitName?.let { fitName ->
         if (!kind.canBeHull) {
-            throw EsfException("'${t.name}' cannot take a fit name", n)
+            throw EsfRuleException("'${t.name}' cannot take a fit name", n)
         }
         val matches = named[t.id to fold(fitName)].orEmpty()
         if (matches.size != 1) {
             val what = if (matches.isEmpty()) "no fit" else "more than one fit"
-            throw EsfException("$what matches ${t.name} '$fitName'", n)
+            throw EsfRuleException("$what matches ${t.name} '$fitName'", n)
         }
         item.reference = matches.single()
     }
 
     line.location?.let { location ->
         if (fit.cargoOnly && location != Place.CARGO) {
-            throw EsfException("a fit without a ship stores everything in cargo", n)
+            throw EsfRuleException("a fit without a ship stores everything in cargo", n)
         }
         if (line.index != null && Place.ofShip(kind) != location) {
-            throw EsfException("'${t.name}' does not go in the ${location.text} rack", n)
+            throw EsfRuleException("'${t.name}' does not go in the ${location.text} rack", n)
         }
         if (location == Place.BAY && kind != Kind.DRONE && kind != Kind.FIGHTER) {
-            throw EsfException("@bay is only for drones and fighters", n)
+            throw EsfRuleException("@bay is only for drones and fighters", n)
         }
         item.place = location
     }
 
     val plugged = item.place.isPlugged
     if (plugged && line.count != null) {
-        throw EsfException("a plugged-in implant or booster takes no count", n)
+        throw EsfRuleException("a plugged-in implant or booster takes no count", n)
     }
 
     line.state?.let { state ->
         if (item.place.isStored) {
-            throw EsfException("a stored item has no state", n)
+            throw EsfRuleException("a stored item has no state", n)
         }
         if (plugged && state != State.OFF) {
-            throw EsfException("an implant or booster takes !off only", n)
+            throw EsfRuleException("an implant or booster takes !off only", n)
         }
     }
 
     line.charge?.let { name ->
         val charge = type(catalog, name, n)
         if (charge.kind != Kind.CHARGE) {
-            throw EsfException("'${charge.name}' is not a charge", n)
+            throw EsfRuleException("'${charge.name}' is not a charge", n)
         }
         item.charge = charge
     }
@@ -213,13 +214,13 @@ private fun line(
 
     val seen = mutableSetOf<Int>()
     for ((name, value) in line.overrides) {
-        val attribute = catalog.attribute(fold(name)) ?: throw EsfException("unknown attribute '$name'", n)
+        val attribute = catalog.attribute(fold(name)) ?: throw EsfCatalogException("unknown attribute '$name'", n)
         if (!seen.add(attribute.id)) {
-            throw EsfException("attribute '${attribute.name}' is overridden twice", n)
+            throw EsfRuleException("attribute '${attribute.name}' is overridden twice", n)
         }
         val number = value.toDouble()
         if (!number.isFinite()) {
-            throw EsfException("value '$value' is out of range", n)
+            throw EsfRuleException("value '$value' is out of range", n)
         }
         item.overrides.add(attribute to number)
     }
@@ -253,7 +254,7 @@ private fun checkCycles(fits: List<Fit>) {
             }
             val (item, ref) = top.references[top.at++]
             if (ref in path) {
-                throw EsfException("a fit cannot contain itself", item.line.number)
+                throw EsfRuleException("a fit cannot contain itself", item.line.number)
             }
             if (ref !in done) {
                 path.add(ref)
@@ -269,7 +270,7 @@ private fun layout(items: List<Placed>): List<Run> {
     for (item in items) {
         val index = item.line.index ?: continue
         if (pinned.put(index, item) != null) {
-            throw EsfException("slot $index is pinned twice", item.line.number)
+            throw EsfRuleException("slot $index is pinned twice", item.line.number)
         }
     }
 

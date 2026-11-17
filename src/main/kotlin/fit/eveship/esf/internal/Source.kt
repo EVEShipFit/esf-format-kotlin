@@ -2,8 +2,11 @@ package fit.eveship.esf.internal
 
 import fit.eveship.esf.Catalog
 import fit.eveship.esf.Entry
+import fit.eveship.esf.EsfCatalogException
 import fit.eveship.esf.EsfException
 import fit.eveship.esf.EsfFit
+import fit.eveship.esf.EsfFormatException
+import fit.eveship.esf.EsfRuleException
 
 // Fits as the text they stand for, and the check that their IDs match it (SPEC §10.2).
 
@@ -19,7 +22,7 @@ internal fun source(
     catalog: Catalog,
 ): Pair<String, List<Where>> {
     if (fits.isEmpty()) {
-        throw EsfException("a document holds at least one fit")
+        throw EsfFormatException("a document holds at least one fit")
     }
     val out = StringBuilder()
     val where = mutableListOf<Where>()
@@ -60,7 +63,7 @@ internal fun verify(
                 val got = item.overrides.map { it.first.id }
                 val want = entry.overrides.keys.toList()
                 if (got != want) {
-                    throw EsfException(
+                    throw EsfRuleException(
                         "attribute IDs ${want.joinToString(
                             ", ",
                             "[",
@@ -82,15 +85,15 @@ internal inline fun <T> located(
     try {
         block()
     } catch (e: EsfException) {
-        throw EsfException(e.reason, fitNumber = fit, entryNumber = entry)
+        throw e.at(fit, entry)
     }
 
 private fun name(text: String): String {
     if ('\r' in text || '\n' in text) {
-        throw EsfException("a fit name contains CR or LF")
+        throw EsfFormatException("a fit name contains CR or LF")
     }
     if (text.hasLoneSurrogate()) {
-        throw EsfException("a fit name is not valid UTF-8")
+        throw EsfFormatException("a fit name is not valid UTF-8")
     }
     return quote(text)
 }
@@ -100,13 +103,13 @@ private fun typeName(
     typeId: Int,
     what: String,
 ): String {
-    val type = catalog.typeById(typeId) ?: throw EsfException("unknown $what type ID $typeId")
+    val type = catalog.typeById(typeId) ?: throw EsfCatalogException("unknown $what type ID $typeId")
     return quoteType(type.name)
 }
 
 private fun number(value: Double): String {
     if (!value.isFinite()) {
-        throw EsfException("an override value is not finite")
+        throw EsfRuleException("an override value is not finite")
     }
     return formatNumber(value)
 }
@@ -116,19 +119,19 @@ private fun entry(
     catalog: Catalog,
 ): String {
     if ((e.count != null && e.count < 1) || (e.chargeCount != null && e.chargeCount < 1)) {
-        throw EsfException("a count must be at least 1")
+        throw EsfRuleException("a count must be at least 1")
     }
     if (e.slot != null && e.slot < 1) {
-        throw EsfException("a slot must be at least 1")
+        throw EsfRuleException("a slot must be at least 1")
     }
     if (e.slot != null && (e.location == null || !Place.valueOf(e.location.name).isRack)) {
-        throw EsfException("a slot needs the rack it is in")
+        throw EsfRuleException("a slot needs the rack it is in")
     }
     if (e.type != null && e.slot == null && e.location != null && Place.valueOf(e.location.name).isRack) {
-        throw EsfException("an item names a rack only to pin a slot")
+        throw EsfRuleException("an item names a rack only to pin a slot")
     }
     if (e.chargeCount != null && e.charge == null) {
-        throw EsfException("a charge count is set without a charge")
+        throw EsfRuleException("a charge count is set without a charge")
     }
 
     val parts = mutableListOf<String>()
@@ -144,7 +147,7 @@ private fun entry(
         val pairs =
             e.overrides.map { (attributeId, value) ->
                 val attribute =
-                    catalog.attributeById(attributeId) ?: throw EsfException("unknown attribute ID $attributeId")
+                    catalog.attributeById(attributeId) ?: throw EsfCatalogException("unknown attribute ID $attributeId")
                 "${attribute.name} ${number(value)}"
             }
         parts.add(pairs.joinToString(", ", "{", "}"))
@@ -170,6 +173,6 @@ private fun same(
     what: String,
 ) {
     if (got != want) {
-        throw EsfException("$what ID $want is not what its name resolves to ($got)")
+        throw EsfRuleException("$what ID $want is not what its name resolves to ($got)")
     }
 }

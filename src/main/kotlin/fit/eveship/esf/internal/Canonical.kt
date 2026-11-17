@@ -3,8 +3,8 @@ package fit.eveship.esf.internal
 import fit.eveship.esf.AttributeRecord
 import fit.eveship.esf.Catalog
 import fit.eveship.esf.Entry
-import fit.eveship.esf.EsfException
 import fit.eveship.esf.EsfFit
+import fit.eveship.esf.EsfRuleException
 import fit.eveship.esf.Kind
 import fit.eveship.esf.Location
 import fit.eveship.esf.MutaplasmidRecord
@@ -220,7 +220,7 @@ private fun collapse(lines: List<Collapsible>): List<CanonLine> {
         if (last != null && body != null && body == lastBody) {
             val count = (last.count ?: 1) + (line.count ?: 1)
             if (count > UINT32_MAX) {
-                throw EsfException("lines collapse into a count of $count, which is too large")
+                throw EsfRuleException("lines collapse into a count of $count, which is too large")
             }
             last.count = count
             continue

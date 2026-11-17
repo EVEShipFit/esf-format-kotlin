@@ -1,6 +1,6 @@
 package fit.eveship.esf.internal
 
-import fit.eveship.esf.EsfException
+import fit.eveship.esf.EsfFormatException
 import fit.eveship.esf.State
 
 internal const val SIGILS = ":+{!@/\""
@@ -16,7 +16,7 @@ internal class Cursor(
 ) {
     var i = 0
 
-    fun error(message: String): Nothing = throw EsfException(message, number)
+    fun error(message: String): Nothing = throw EsfFormatException(message, number)
 
     fun peek(): Char? = s.getOrNull(i)
 

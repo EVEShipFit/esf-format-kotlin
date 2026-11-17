@@ -1,6 +1,6 @@
 package fit.eveship.esf.internal
 
-import fit.eveship.esf.EsfException
+import fit.eveship.esf.EsfFormatException
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -85,7 +85,7 @@ internal class WireReader(
 
     private fun take(n: Long): WireReader {
         if (n < 0 || n > end - pos) {
-            throw EsfException("binary: not valid Protocol Buffers (cut short)")
+            throw EsfFormatException("binary: not valid Protocol Buffers (cut short)")
         }
         val start = pos
         pos += n.toInt()
@@ -97,7 +97,7 @@ internal class WireReader(
         var value = 0L
         for (shift in 0 until 64 step 7) {
             if (pos >= end) {
-                throw EsfException("binary: not valid Protocol Buffers (cut short)")
+                throw EsfFormatException("binary: not valid Protocol Buffers (cut short)")
             }
             val byte = data[pos++].toInt() and 0xFF
             value = value or ((byte and 0x7F).toLong() shl shift)
@@ -105,14 +105,14 @@ internal class WireReader(
                 return value
             }
         }
-        throw EsfException("binary: not valid Protocol Buffers (varint is too long)")
+        throw EsfFormatException("binary: not valid Protocol Buffers (varint is too long)")
     }
 
     /** A record's key: its field number and wire type, as [tag] makes them. */
     fun key(): Long {
         val key = varint()
         if (key ushr 3 == 0L || key !in 0..UINT32_MAX || key and 7 > I32) {
-            throw EsfException("binary: not valid Protocol Buffers (bad key ${key.toULong()})")
+            throw EsfFormatException("binary: not valid Protocol Buffers (bad key ${key.toULong()})")
         }
         return key
     }
@@ -137,7 +137,7 @@ internal class WireReader(
 
     fun doubles(): List<Double> {
         if ((end - pos) % 8 != 0) {
-            throw EsfException("binary: not valid Protocol Buffers (packed doubles cut short)")
+            throw EsfFormatException("binary: not valid Protocol Buffers (packed doubles cut short)")
         }
         val buffer = ByteBuffer.wrap(data, pos, end - pos).order(ByteOrder.LITTLE_ENDIAN)
         pos = end
@@ -152,7 +152,7 @@ internal class WireReader(
             I32 -> take(4)
             LEN -> take(varint())
             SGROUP -> skipGroup(key ushr 3)
-            else -> throw EsfException("binary: not valid Protocol Buffers (unmatched end group)")
+            else -> throw EsfFormatException("binary: not valid Protocol Buffers (unmatched end group)")
         }
     }
 
@@ -167,7 +167,7 @@ internal class WireReader(
 
                 EGROUP -> {
                     if (open.removeLast() != key ushr 3) {
-                        throw EsfException("binary: not valid Protocol Buffers (unmatched end group)")
+                        throw EsfFormatException("binary: not valid Protocol Buffers (unmatched end group)")
                     }
                 }
 

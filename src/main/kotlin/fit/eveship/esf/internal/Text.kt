@@ -1,6 +1,6 @@
 package fit.eveship.esf.internal
 
-import fit.eveship.esf.EsfException
+import fit.eveship.esf.EsfFormatException
 import java.nio.ByteBuffer
 import java.nio.charset.CharacterCodingException
 
@@ -31,7 +31,7 @@ internal fun textOf(data: ByteArray): String {
     while (true) {
         val end = data.indexOf(start, '\n'.code.toByte())
         if (decodeUtf8(data, start, end - start) == null) {
-            throw EsfException("not valid UTF-8", number)
+            throw EsfFormatException("not valid UTF-8", number)
         }
         start = end + 1
         number++
@@ -44,7 +44,7 @@ internal fun utf8Of(text: String): ByteArray {
         return text.encodeToByteArray(throwOnInvalidSequence = true)
     } catch (_: CharacterCodingException) {
         val number = text.lineSequence().indexOfFirst { it.hasLoneSurrogate() }
-        throw EsfException("not valid UTF-8", number + 1)
+        throw EsfFormatException("not valid UTF-8", number + 1)
     }
 }
 
@@ -74,21 +74,21 @@ internal fun parseText(data: String): List<FitBlock> {
         val number = n + 1
         val raw = line.removeSuffix("\r")
         if ('\r' in raw) {
-            throw EsfException("a CR must be followed by an LF", number)
+            throw EsfFormatException("a CR must be followed by an LF", number)
         }
 
         val stripped = raw.trimStart(' ')
         if (stripped.startsWith('%')) {
-            val match = HEADER.matchEntire(raw) ?: throw EsfException("malformed header", number)
+            val match = HEADER.matchEntire(raw) ?: throw EsfFormatException("malformed header", number)
             if (header != null) {
-                throw EsfException("a fit needs a hull line", header)
+                throw EsfFormatException("a fit needs a hull line", header)
             }
             inBlock = true
             current = null
             val (format, version) = match.destructured
             if (format == "esf") {
                 if (version != "1") {
-                    throw EsfException("unsupported version esf/$version", number)
+                    throw EsfFormatException("unsupported version esf/$version", number)
                 }
                 header = number
             }
@@ -96,7 +96,7 @@ internal fun parseText(data: String): List<FitBlock> {
         }
 
         if (!inBlock) {
-            throw EsfException("a document starts with a header", number)
+            throw EsfFormatException("a document starts with a header", number)
         }
         if (stripped.isEmpty() || stripped.startsWith("//")) {
             continue
@@ -112,10 +112,10 @@ internal fun parseText(data: String): List<FitBlock> {
     }
 
     if (header != null) {
-        throw EsfException("a fit needs a hull line", header)
+        throw EsfFormatException("a fit needs a hull line", header)
     }
     if (fits.isEmpty()) {
-        throw EsfException("a document holds at least one fit")
+        throw EsfFormatException("a document holds at least one fit")
     }
     return fits
 }

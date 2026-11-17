@@ -125,7 +125,7 @@ class ApiTest {
     @Test
     fun errorLocation() {
         val e =
-            assertFailsWith<EsfException> {
+            assertFailsWith<EsfCatalogException> {
                 Esf.save(
                     listOf(fit(), fit(Entry(AUTOCANNON), Entry(999_999_999))),
                     catalog,
@@ -137,16 +137,43 @@ class ApiTest {
 
     @Test
     fun errorLocationOfAFit() {
-        val e = assertFailsWith<EsfException> { Esf.save(listOf(fit(), EsfFit(RIFTER, mode = 999_999_999)), catalog) }
+        val e =
+            assertFailsWith<EsfCatalogException> {
+                Esf.save(
+                    listOf(fit(), EsfFit(RIFTER, mode = 999_999_999)),
+                    catalog,
+                )
+            }
         assertEquals(listOf(2, null), listOf(e.fitNumber, e.entryNumber))
         assertTrue(e.message!!.startsWith("fit 2: "))
     }
 
     @Test
+    fun errorLocationOfAResolvedFit() {
+        val e = assertFailsWith<EsfRuleException> { Esf.save(listOf(fit(), EsfFit(EMP)), catalog) }
+        assertEquals("fit 2: 'Republic Fleet EMP S' is not a ship, structure or container", e.message)
+    }
+
+    @Test
     fun errorLocationOfALine() {
-        val e = assertFailsWith<EsfException> { Esf.load("%esf/1\nRifter\nNot A Type\n", catalog) }
+        val e = assertFailsWith<EsfCatalogException> { Esf.load("%esf/1\nRifter\nNot A Type\n", catalog) }
         assertEquals(3, e.lineNumber)
         assertEquals("line 3: unknown type 'Not A Type'", e.message)
+    }
+
+    @Test
+    fun errorKinds() {
+        assertFailsWith<EsfFormatException> { Esf.load("%esf/1\n2x Rifter\n", catalog) }
+        assertFailsWith<EsfFormatException> { Esf.load(byteArrayOf(0x0A), catalog) }
+        assertFailsWith<EsfCatalogException> { Esf.load("%esf/1\nRifter\nDamage Control II {nope 1}\n", catalog) }
+        assertFailsWith<EsfRuleException> {
+            Esf.load(
+                "%esf/1\nRifter\nDamage Control II @bay\n",
+                catalog,
+            )
+        }
+        assertFailsWith<EsfRuleException> { Esf.save(listOf(fit(Entry(AUTOCANNON, count = 0))), catalog) }
+        assertFailsWith<EsfFormatException> { Esf.save(listOf(named("a\nb")), catalog) }
     }
 
     @Test
@@ -178,7 +205,7 @@ class ApiTest {
 
     @Test
     fun loadStringWithLoneSurrogate() {
-        val e = assertFailsWith<EsfException> { Esf.load("%esf/1\n\nRifter\uD800\n", catalog) }
+        val e = assertFailsWith<EsfFormatException> { Esf.load("%esf/1\n\nRifter\uD800\n", catalog) }
         assertEquals("line 3: not valid UTF-8", e.message)
     }
 
@@ -222,7 +249,7 @@ class ApiTest {
     @ParameterizedTest
     @ValueSource(strings = ["not base64url!", "AA==", "AAAAA"])
     fun invalidBase64Url(encoded: String) {
-        assertFailsWith<EsfException> { Esf.fromBase64Url(encoded) }
+        assertFailsWith<EsfFormatException> { Esf.fromBase64Url(encoded) }
     }
 
     @Test
