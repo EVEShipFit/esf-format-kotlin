@@ -146,7 +146,7 @@ public data class Entry
         /**
          * The name of another fit in the same list, which this entry carries.
          *
-         * Only for a ship, structure or container. The other fit must have this entry's
+         * Only for a type whose [Kind.canBeHull] is true. The other fit must have this entry's
          * [type] as its [EsfFit.hull] and this as its [EsfFit.name], ignoring case. For example,
          * a Heron with fit name "Scout" and [Location.FRIGATE] carries that fit in the
          * Frigate Escape Bay. Null means an unfitted ship or an empty container.
@@ -202,6 +202,7 @@ public data class EsfFit
     constructor(
         /**
          * The type ID of the ship, structure or container, like 587 for the Rifter.
+         * Only a type whose [Kind.canBeHull] is true can be a hull.
          *
          * Null for a fit without a ship, like the items in a contract: then every entry is
          * stored in cargo, and the fit has no slots and no [mode].

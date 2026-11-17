@@ -56,6 +56,10 @@ public enum class Kind {
 
     /** Anything else, like ore or a module without a slot. It goes in the cargo. */
     OTHER,
+    ;
+
+    /** Whether a type of this kind can be the [EsfFit.hull] of a fit: true for [HULL] and [CONTAINER] only. */
+    public val canBeHull: Boolean get() = this == HULL || this == CONTAINER
 }
 
 /**

@@ -86,6 +86,11 @@ class ApiTest {
     }
 
     @Test
+    fun onlyHullsAndContainersCanBeHulls() {
+        assertEquals(setOf(Kind.HULL, Kind.CONTAINER), Kind.entries.filter { it.canBeHull }.toSet())
+    }
+
+    @Test
     fun mutaplasmidRolls() {
         val entry =
             Entry(DAMAGE_CONTROL, mutaplasmid = DECAYED_DAMAGE_CONTROL_MUTAPLASMID, overrides = mapOf(50 to 31.5))
