@@ -74,7 +74,7 @@ Each `Entry` is one line of the fit. `null` means the default:
 | `charge` | The charge loaded. | |
 | `chargeCount` | How many charges. | A full load. |
 | `mutaplasmid` | The mutaplasmid applied. | |
-| `overrides` | Attribute values by attribute ID. | |
+| `overrides` | Dogma attribute values by attribute ID. | |
 | `state` | `State.OFF`, `ON` or `HEAT`. | Active if the type can be, else on. |
 | `location` | `CARGO`, `BAY` or another hold; a rack for an empty slot, or with `slot`. | Where the type goes by default. |
 | `slot` | The slot in the `location` rack, or the launch tube for a fighter in `TUBE`, counting from 1. `load()` never sets it: it returns the rack in slot order, with empty slots between. | The next free slot. |
@@ -82,7 +82,7 @@ Each `Entry` is one line of the fit. `null` means the default:
 ## The Catalog
 
 The library holds no game data. You give it a `Catalog`: an object that looks
-up types and attributes in your copy of the SDE.
+up types and dogma attributes in your copy of the SDE.
 
 ```kotlin
 class MyCatalog : Catalog {
@@ -103,7 +103,7 @@ from. `Sde` has helpers for the parts that take more than a lookup:
 ```kotlin
 val typeNames = Sde.nameIndex(types, { it.id }, { it.name.en }, { it.published })
 
-// effects: effectID -> effectCategoryID; attributes: attributeID -> value
+// effects: effectID -> effectCategoryID; attributes: dogma attributeID -> value
 
 TypeRecord(
     id = t.id,
