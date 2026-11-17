@@ -9,7 +9,7 @@ internal const val UINT32_MAX = 0xFFFFFFFFL
 internal fun isCount(token: String): Boolean =
     token.length > 1 && token.last() == 'x' && token.dropLast(1).all { it in '0'..'9' }
 
-private val NAME_WITH_ID = Regex("(.*[^ ])#([0-9]+)")
+private val NAME_WITH_ID = Regex("(.*[^ ])#([0-9]+)", RegexOption.DOT_MATCHES_ALL)
 private val TYPE_ID = Regex("#([0-9]+)")
 
 internal fun endsInTypeId(name: String): Boolean = NAME_WITH_ID.matches(name)
