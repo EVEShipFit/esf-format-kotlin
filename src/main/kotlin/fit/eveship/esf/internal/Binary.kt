@@ -1,8 +1,9 @@
 package fit.eveship.esf.internal
 
 import fit.eveship.esf.Entry
-import fit.eveship.esf.EsfException
 import fit.eveship.esf.EsfFit
+import fit.eveship.esf.EsfFormatException
+import fit.eveship.esf.EsfRuleException
 import fit.eveship.esf.Location
 import fit.eveship.esf.State
 
@@ -24,12 +25,12 @@ internal fun decodeBinary(data: ByteArray): List<EsfFit> {
             continue
         }
         if (key != tag(1, LEN)) {
-            throw EsfException("binary: Document.fits has the wrong wire type")
+            throw EsfFormatException("binary: Document.fits has the wrong wire type")
         }
         fits.add(decodeFit(reader.message()))
     }
     if (fits.isEmpty()) {
-        throw EsfException("binary: a document holds at least one fit")
+        throw EsfFormatException("binary: a document holds at least one fit")
     }
     return fits
 }
@@ -74,7 +75,7 @@ private fun decodeFit(reader: WireReader): EsfFit {
         }
     }
     if (version != 1L) {
-        throw EsfException("binary: unsupported Fit.version $version")
+        throw EsfFormatException("binary: unsupported Fit.version $version")
     }
     return EsfFit(hull, name, mode, entries)
 }
@@ -108,11 +109,11 @@ private fun decodeEntry(reader: WireReader): Entry {
         }
     }
     if (attributes.size != values.size) {
-        throw EsfException("binary: override fields have different lengths")
+        throw EsfFormatException("binary: override fields have different lengths")
     }
     val overrides = attributes.zip(values).toMap()
     if (overrides.size != attributes.size) {
-        throw EsfException("binary: an attribute is overridden twice")
+        throw EsfRuleException("binary: an attribute is overridden twice")
     }
     return Entry(type, count, fitName, charge, chargeCount, mutaplasmid, overrides, state, location)
 }
@@ -122,7 +123,7 @@ private fun uint32(
     what: String,
 ): Long {
     if (value !in 0..UINT32_MAX) {
-        throw EsfException("binary: $what is out of range")
+        throw EsfFormatException("binary: $what is out of range")
     }
     return value
 }
@@ -133,7 +134,7 @@ private fun id(
     what: String,
 ): Int {
     if (value !in 0..Int.MAX_VALUE) {
-        throw EsfException("binary: $what is out of range")
+        throw EsfFormatException("binary: $what is out of range")
     }
     return value.toInt()
 }
@@ -142,7 +143,7 @@ private fun string(
     reader: WireReader,
     what: String,
 ): String? {
-    val value = reader.string() ?: throw EsfException("binary: $what is not valid UTF-8")
+    val value = reader.string() ?: throw EsfFormatException("binary: $what is not valid UTF-8")
     return value.ifEmpty { null }
 }
 
@@ -155,7 +156,7 @@ private fun <T> enumValue(
     when (value) {
         0L -> null
         in 1L..entries.size.toLong() -> entries[value.toInt() - 1]
-        else -> throw EsfException("binary: unknown $what value ${value.toULong()}")
+        else -> throw EsfFormatException("binary: unknown $what value ${value.toULong()}")
     }
 
-private fun notInSchema(what: String) = EsfException("binary: $what has a field that is not in the schema")
+private fun notInSchema(what: String) = EsfFormatException("binary: $what has a field that is not in the schema")
