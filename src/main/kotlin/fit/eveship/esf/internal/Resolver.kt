@@ -94,17 +94,17 @@ private fun type(
     catalog: Catalog,
     ref: TypeRef,
     line: Int,
-): TypeRecord =
-    when (ref) {
-        is TypeRef.Name -> {
-            catalog.type(fold(ref.name)) ?: throw EsfCatalogException("unknown type '${ref.name}'", line)
-        }
-
-        is TypeRef.Id -> {
-            ref.id.takeIf { it <= Int.MAX_VALUE }?.let { catalog.typeById(it.toInt()) }
-                ?: throw EsfCatalogException("unknown type ID #${ref.id}", line)
-        }
+): TypeRecord {
+    val id =
+        ref.id ?: return catalog.type(fold(ref.name)) ?: throw EsfCatalogException("unknown type '${ref.name}'", line)
+    val t =
+        id.takeIf { it <= Int.MAX_VALUE }?.let { catalog.typeById(it.toInt()) }
+            ?: throw EsfCatalogException("unknown type ID #$id", line)
+    if (fold(t.name) != fold(ref.name)) {
+        throw EsfRuleException("type ID #$id is '${t.name}', not '${ref.name}'", line)
     }
+    return t
+}
 
 private fun <T> pick(
     candidates: List<T>,

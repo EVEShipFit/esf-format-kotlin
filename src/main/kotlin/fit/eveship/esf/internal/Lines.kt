@@ -42,13 +42,8 @@ internal class ItemLine(
     override var index: Long? = null
 }
 
-/** A type as written: by name, or by its type ID (§6.13). */
-internal sealed interface TypeRef {
-    class Name(
-        val name: String,
-    ) : TypeRef
-
-    class Id(
-        val id: Long,
-    ) : TypeRef
-}
+/** A type as written: its name, and the type ID after it if there is one (§6.13). */
+internal class TypeRef(
+    val name: String,
+    val id: Long? = null,
+)

@@ -197,7 +197,7 @@ class ApiTest {
     fun sharedNameByTypeId() {
         val fits = listOf(fit(Entry(AVATAR_UNPUBLISHED)))
         val text = Esf.save(fits, catalog)
-        assertEquals("%esf/1\nRifter\n\n#50097\n", text)
+        assertEquals("%esf/1\nRifter\n\nAvatar#50097\n", text)
         assertEquals(fits, Esf.load(text, catalog))
         assertEquals(fits, Esf.load(Esf.saveBinary(fits, catalog), catalog))
     }
@@ -220,7 +220,7 @@ class ApiTest {
 
     @Test
     fun loadTypeId() {
-        val fits = Esf.load("%esf/1\n#587\n#2889 :#21898\n", catalog)
+        val fits = Esf.load("%esf/1\nRifter#587\n200mm AutoCannon II#2889 :Republic Fleet EMP S#21898\n", catalog)
         assertEquals(listOf(fit(Entry(AUTOCANNON, charge = EMP))), fits)
     }
 
@@ -474,12 +474,13 @@ class ApiTest {
                     "%esf/1\nRifter\n${"4294967295x Damage Control II\n".repeat(2)}".encodeToByteArray(),
                     "too large",
                 ),
-                arguments("type-id-huge", "%esf/1\nRifter\n#4294967296\n".encodeToByteArray(), "type ID is too large"),
-                arguments("type-id-unknown", "%esf/1\nRifter\n#999999999\n".encodeToByteArray(), "unknown type ID"),
-                arguments("type-id-largest", "%esf/1\nRifter\n#4294967295\n".encodeToByteArray(), "unknown type ID"),
+                arguments("type-id-huge", "%esf/1\nRifter#4294967296\n".encodeToByteArray(), "type ID is too large"),
+                arguments("type-id-unknown", "%esf/1\nRifter#999999999\n".encodeToByteArray(), "unknown type ID"),
+                arguments("type-id-largest", "%esf/1\nRifter#4294967295\n".encodeToByteArray(), "unknown type ID"),
+                arguments("type-id-wrong-name", "%esf/1\nRifter#605\n".encodeToByteArray(), "is 'Heron', not 'Rifter'"),
                 arguments(
                     "type-id-long",
-                    "%esf/1\nRifter\n#12345678901234567890\n".encodeToByteArray(),
+                    "%esf/1\nRifter#12345678901234567890\n".encodeToByteArray(),
                     "type ID is too large",
                 ),
             )

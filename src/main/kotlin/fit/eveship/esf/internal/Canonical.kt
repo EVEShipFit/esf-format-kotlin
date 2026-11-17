@@ -90,7 +90,7 @@ internal fun quote(s: String): String = "\"" + s.replace("\"", "\"\"") + "\""
 internal fun needsQuotes(name: String): Boolean {
     val words = name.split(' ')
     val first = words[0].firstOrNull()
-    if (first == null || first == '-' || first == '%' || isCount(words[0]) || isTypeId(name)) {
+    if (first == null || first == '-' || first == '%' || isCount(words[0]) || endsInTypeId(name)) {
         return true
     }
     return words.any { it.isEmpty() || it[0] in SIGILS }
@@ -98,11 +98,14 @@ internal fun needsQuotes(name: String): Boolean {
 
 internal fun quoteType(name: String): String = if (needsQuotes(name)) quote(name) else name
 
-/** A type as text: its name, or its ID where the name resolves to another type (§6.13). */
+/** A type as text: its name, and its ID where the name resolves to another type (§6.13). */
 internal fun typeRef(
     catalog: Catalog,
     type: TypeRecord,
-): String = if (catalog.type(fold(type.name))?.id == type.id) quoteType(type.name) else "#${type.id}"
+): String {
+    val name = quoteType(type.name)
+    return if (catalog.type(fold(type.name))?.id == type.id) name else "$name#${type.id}"
+}
 
 internal fun canonicalFit(
     fit: Fit,
