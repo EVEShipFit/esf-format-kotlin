@@ -68,7 +68,7 @@ public enum class Kind {
  * With the SDE, most fields come from `types.jsonl`. [kind], [active] and [squadronSize]
  * also need `groups.jsonl`, `typeDogma.jsonl` and `dogmaEffects.jsonl`, through the helpers in [Sde].
  * Include every type in `types.jsonl`. A type with no row in `typeDogma.jsonl` has no effects
- * and no attributes: give the helpers an empty collection or map.
+ * and no dogma attributes: give the helpers an empty collection or map.
  */
 public data class TypeRecord
     @JvmOverloads
@@ -97,7 +97,7 @@ public data class TypeRecord
         /**
          * For a fighter, how many make up a full squadron. Null for anything else.
          *
-         * In the SDE this is the attribute `fighterSquadronMaxSize`; [Sde.squadronSize] reads it for you.
+         * In the SDE this is the dogma attribute `fighterSquadronMaxSize`; [Sde.squadronSize] reads it for you.
          */
         val squadronSize: Int? = null,
     )
@@ -125,7 +125,7 @@ public data class MutaplasmidRecord(
     /** The mutaplasmid's own type: the type whose ID is the entry's `_key`. */
     val type: TypeRecord,
     /**
-     * The attributes the mutaplasmid changes, each with the base type's value before the change.
+     * The dogma attributes the mutaplasmid changes, each with the base type's value before the change.
      *
      * The keys are the `_key` of each item in the entry's `attributeIDs`; its `min` and `max`
      * are not needed. Each value is the base type's value of that attribute in `typeDogma.jsonl`.
@@ -168,7 +168,7 @@ public interface Catalog {
     public fun typeById(typeId: Int): TypeRecord?
 
     /**
-     * Finds an attribute by its name, like "speedfactor".
+     * Finds a dogma attribute by its name, like "speedfactor".
      *
      * Used to read attribute overrides, like the rolls on an abyssal module.
      *
@@ -181,7 +181,7 @@ public interface Catalog {
     public fun attribute(foldedName: String): AttributeRecord?
 
     /**
-     * Finds an attribute by its ID.
+     * Finds a dogma attribute by its ID.
      *
      * Used to write attribute overrides, like the rolls on an abyssal module.
      *

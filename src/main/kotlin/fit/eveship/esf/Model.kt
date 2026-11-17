@@ -169,7 +169,7 @@ public data class Entry
          */
         val mutaplasmid: Int? = null,
         /**
-         * Attribute values that replace the type's own, by attribute ID, like 20 (speedFactor) to 524.0.
+         * Dogma attribute values that replace the type's own, by attribute ID, like 20 (speedFactor) to 524.0.
          *
          * Each value is the new base value, not a change on top of it. Attributes not listed
          * keep the type's value. Empty for none.
