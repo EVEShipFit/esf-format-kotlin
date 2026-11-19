@@ -6,7 +6,6 @@ import fit.eveship.esf.Entry
 import fit.eveship.esf.EsfFit
 import fit.eveship.esf.EsfRuleException
 import fit.eveship.esf.Kind
-import fit.eveship.esf.Location
 import fit.eveship.esf.MutaplasmidRecord
 import fit.eveship.esf.State
 import fit.eveship.esf.TypeRecord
@@ -81,7 +80,7 @@ internal class CanonLine(
             mutaplasmid?.type?.id,
             overrides.associate { (attribute, value) -> attribute.id to value },
             state,
-            location?.let { Location.valueOf(it.name) },
+            location?.location,
         )
 }
 

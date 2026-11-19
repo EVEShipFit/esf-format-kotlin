@@ -8,7 +8,6 @@ import fit.eveship.esf.Kind
 import fit.eveship.esf.MutaplasmidRecord
 import fit.eveship.esf.State
 import fit.eveship.esf.TypeRecord
-import java.util.EnumMap
 
 // Resolving names against the Catalog, and the semantic rules (SPEC §4.2, §5, §6).
 
@@ -19,7 +18,7 @@ internal class Fit(
     val cargoOnly: Boolean,
 ) {
     val items = mutableListOf<Placed>()
-    val racks = EnumMap<Place, List<Run>>(Place::class.java)
+    val racks = mutableMapOf<Place, List<Run>>()
     val name get() = block.fitName
 
     /** Each item that carries a fit, and that fit. */

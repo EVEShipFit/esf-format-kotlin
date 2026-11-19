@@ -134,10 +134,10 @@ private fun entry(
     if (e.slot != null && e.slot < 1) {
         throw EsfRuleException("a slot must be at least 1")
     }
-    if (e.slot != null && (e.location == null || !Place.valueOf(e.location.name).isRack)) {
+    if (e.slot != null && (e.location == null || !Place.of(e.location).isRack)) {
         throw EsfRuleException("a slot needs the rack it is in")
     }
-    if (e.type != null && e.slot == null && e.location != null && Place.valueOf(e.location.name).isRack) {
+    if (e.type != null && e.slot == null && e.location != null && Place.of(e.location).isRack) {
         throw EsfRuleException("an item names a rack only to pin a slot")
     }
     if (e.chargeCount != null && e.charge == null) {
