@@ -1,6 +1,7 @@
 package fit.eveship.esf.internal
 
 import fit.eveship.esf.Kind
+import fit.eveship.esf.Location
 
 /** Where an item is in a fit (§5), in the order of the canonical groups (§8). */
 internal enum class Place {
@@ -41,8 +42,14 @@ internal enum class Place {
     val isRack get() = this <= SVC || this == TUBE
     val isStored get() = this == BAY || this in CARGO..SUBSYSTEM
     val isPlugged get() = this == IMPLANTS || this == BOOSTERS
+    val location get() = locations.getValue(name)
 
     companion object {
+        private val byName = entries.associateBy { it.name }
+        private val locations = Location.entries.associateBy { it.name }
+
+        fun of(location: Location) = byName.getValue(location.name)
+
         /** The places a line can name with `@`, by name. */
         val written = entries.filter { it.isRack || it.isStored }.associateBy { it.text }
 
