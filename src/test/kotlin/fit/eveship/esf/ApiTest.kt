@@ -286,7 +286,7 @@ class ApiTest {
 
     @Test
     fun loadDocumentWithoutExtra() {
-        assertEquals(Document(listOf(EsfFit(RIFTER)), emptyList()), Esf.loadDocument("%esf/1\nRifter\n", catalog))
+        assertEquals(EsfDocument(listOf(EsfFit(RIFTER)), emptyList()), Esf.loadDocument("%esf/1\nRifter\n", catalog))
     }
 
     @Test

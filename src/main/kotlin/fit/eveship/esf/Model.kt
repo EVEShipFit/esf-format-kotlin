@@ -225,7 +225,7 @@ public data class EsfFit
  *
  * [Esf.loadDocument] returns one. [fits] is what [Esf.load] returns.
  */
-public data class Document(
+public data class EsfDocument(
     /** The fits, in canonical form. */
     val fits: List<EsfFit>,
     /** The blocks and binary fields that are not fits, in the order they appear. */

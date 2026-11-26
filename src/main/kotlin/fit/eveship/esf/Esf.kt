@@ -43,7 +43,7 @@ public object Esf {
      * Read a text or binary document, with the data that is not a fit.
      *
      * [load] skips text blocks with a header other than `%esf/N`, and binary `Document`
-     * fields other than `fits`. This returns them too, in [Document.extra]. Its fits are
+     * fields other than `fits`. This returns them too, in [EsfDocument.extra]. Its fits are
      * the same as what [load] returns. It throws the same errors as [load], and one more:
      * a [EsfFormatException] for a block whose version is larger than 4294967295, which
      * [load] skips.
@@ -52,9 +52,9 @@ public object Esf {
     public fun loadDocument(
         data: ByteArray,
         catalog: Catalog,
-    ): Document {
+    ): EsfDocument {
         val read = read(data, catalog)
-        return Document(read.fits, read.foreign.map { it.toExtra() } + read.binary)
+        return EsfDocument(read.fits, read.foreign.map { it.toExtra() } + read.binary)
     }
 
     /** Read a text document, with the data that is not a fit. */
@@ -62,7 +62,7 @@ public object Esf {
     public fun loadDocument(
         data: String,
         catalog: Catalog,
-    ): Document = loadDocument(utf8Of(data), catalog)
+    ): EsfDocument = loadDocument(utf8Of(data), catalog)
 
     /** Write fits as canonical text (§8). */
     @JvmStatic
