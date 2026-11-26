@@ -4,6 +4,7 @@ import fit.eveship.esf.Entry
 import fit.eveship.esf.EsfFit
 import fit.eveship.esf.EsfFormatException
 import fit.eveship.esf.EsfRuleException
+import fit.eveship.esf.Extra
 import fit.eveship.esf.Location
 import fit.eveship.esf.State
 
@@ -15,13 +16,24 @@ internal fun encodeBinary(fits: List<EsfFit>): ByteArray {
     return out.toByteArray()
 }
 
-internal fun decodeBinary(data: ByteArray): List<EsfFit> {
+/** A `Document` field other than `fits`. */
+internal fun encodeField(
+    field: Int,
+    bytes: ByteArray,
+): ByteArray = WireWriter().apply { bytes(field, bytes) }.toByteArray()
+
+internal fun decodeBinary(data: ByteArray): Pair<List<EsfFit>, List<Extra>> {
     val fits = mutableListOf<EsfFit>()
+    val extra = mutableListOf<Extra>()
     val reader = WireReader(data)
     while (!reader.done()) {
         val key = reader.key()
         if (key ushr 3 != 1L) {
-            reader.skip(key)
+            if (key and 7 == LEN.toLong()) {
+                extra.add(Extra.Binary((key ushr 3).toInt(), reader.bytes()))
+            } else {
+                reader.skip(key)
+            }
             continue
         }
         if (key != tag(1, LEN)) {
@@ -32,7 +44,7 @@ internal fun decodeBinary(data: ByteArray): List<EsfFit> {
     if (fits.isEmpty()) {
         throw EsfFormatException("binary: a document holds at least one fit")
     }
-    return fits
+    return fits to extra
 }
 
 private fun WireWriter.encodeFit(fit: EsfFit) {

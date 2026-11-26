@@ -219,3 +219,57 @@ public data class EsfFit
         /** The lines of the fit: items, empty slots and fits it carries. */
         val entries: List<Entry> = emptyList(),
     )
+
+/**
+ * A whole document: its fits, and the data [Esf.load] skips (esf/1 spec §6.11, §10.2).
+ *
+ * [Esf.loadDocument] returns one. [fits] is what [Esf.load] returns.
+ */
+public data class EsfDocument(
+    /** The fits, in canonical form. */
+    val fits: List<EsfFit>,
+    /** The blocks and binary fields that are not fits, in the order they appear. */
+    val extra: List<Extra>,
+)
+
+/**
+ * Data in a document that is not a fit, like a fleet that shares the document.
+ *
+ * A text document gives [Text] blocks, and a binary document gives [Binary] fields.
+ */
+public sealed interface Extra {
+    /**
+     * A text block whose header is not `%esf/N`, like `%fleet/1`.
+     *
+     * [text] is everything after the header line, up to the next header or the end of the
+     * document, exactly as written: line endings and blank lines are kept. It can be empty.
+     */
+    public data class Text(
+        /** The name in the header, like "fleet". */
+        val name: String,
+        /** The version in the header, like 1. */
+        val version: Long,
+        /** The body of the block. */
+        val text: String,
+    ) : Extra
+
+    /**
+     * A field of the binary `Document` message other than `fits`, with wire type 2
+     * (length-delimited). Fields with other wire types are skipped.
+     *
+     * To write one, append [Esf.binaryField] to the output of [Esf.saveBinary].
+     */
+    public data class Binary(
+        /** The field number, 2 or more. */
+        val field: Int,
+        /** The content of the field. */
+        val bytes: ByteArray,
+    ) : Extra {
+        override fun equals(other: Any?): Boolean =
+            other is Binary && field == other.field && bytes.contentEquals(other.bytes)
+
+        override fun hashCode(): Int = 31 * field + bytes.contentHashCode()
+
+        override fun toString(): String = "Binary(field=$field, bytes=${bytes.contentToString()})"
+    }
+}

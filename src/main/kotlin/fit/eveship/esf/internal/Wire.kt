@@ -125,6 +125,11 @@ internal class WireReader(
         return decodeUtf8(data, payload.pos, payload.end - payload.pos)
     }
 
+    fun bytes(): ByteArray {
+        val payload = message()
+        return data.copyOfRange(payload.pos, payload.end)
+    }
+
     fun double(): Double = take(8).doubles().single()
 
     fun uints(): List<Long> {

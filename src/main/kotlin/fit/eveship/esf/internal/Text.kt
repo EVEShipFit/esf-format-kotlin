@@ -63,15 +63,20 @@ private fun String.isLoneSurrogate(i: Int): Boolean =
         else -> false
     }
 
-/** Split a text document into fits; other blocks are skipped. */
-internal fun parseText(data: String): List<FitBlock> {
+/** Split a text document into fits and the other blocks. */
+internal fun parseText(data: String): Pair<List<FitBlock>, List<ForeignBlock>> {
     val lines = data.split('\n').let { if (it.last().isEmpty()) it.dropLast(1) else it }
     val fits = mutableListOf<FitBlock>()
+    val extra = mutableListOf<ForeignBlock>()
+    var foreign: Pair<Int, Int>? = null
     var current: FitBlock? = null
     var header: Int? = null
     var inBlock = false
+    var end = 0
     for ((n, line) in lines.withIndex()) {
         val number = n + 1
+        val start = end
+        end = minOf(start + line.length + 1, data.length)
         val raw = line.removeSuffix("\r")
         if ('\r' in raw) {
             throw EsfFormatException("a CR must be followed by an LF", number)
@@ -85,12 +90,16 @@ internal fun parseText(data: String): List<FitBlock> {
             }
             inBlock = true
             current = null
+            foreign?.let { extra.add(foreignBlock(lines, it.first, data.substring(it.second, start))) }
+            foreign = null
             val (format, version) = match.destructured
             if (format == "esf") {
                 if (version != "1") {
                     throw EsfFormatException("unsupported version esf/$version", number)
                 }
                 header = number
+            } else {
+                foreign = number to end
             }
             continue
         }
@@ -111,13 +120,24 @@ internal fun parseText(data: String): List<FitBlock> {
         }
     }
 
+    foreign?.let { extra.add(foreignBlock(lines, it.first, data.substring(it.second))) }
+
     if (header != null) {
         throw EsfFormatException("a fit needs a hull line", header)
     }
     if (fits.isEmpty()) {
         throw EsfFormatException("a document holds at least one fit")
     }
-    return fits
+    return fits to extra
+}
+
+private fun foreignBlock(
+    lines: List<String>,
+    number: Int,
+    text: String,
+): ForeignBlock {
+    val (name, version) = HEADER.matchEntire(lines[number - 1].removeSuffix("\r"))!!.destructured
+    return ForeignBlock(number, name, version, text)
 }
 
 private fun hull(

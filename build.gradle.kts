@@ -34,6 +34,7 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:6.1.3"))
     testImplementation("org.junit.jupiter:junit-jupiter-params")
     testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
+    testImplementation("org.tomlj:tomlj:1.1.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

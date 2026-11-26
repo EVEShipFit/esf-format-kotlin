@@ -58,6 +58,34 @@ Catch a subclass to handle one kind of error:
 | `EsfCatalogException` | The catalog does not know a name or ID, or a name matches more than one type. |
 | `EsfRuleException` | The fit breaks a rule, like a module in the wrong rack. |
 
+## Other data in a document
+
+A document can hold more than fits. A text block with another header, like
+`%fleet/1`, and a binary `Document` field other than `fits` are skipped by
+`load()`. `loadDocument()` gives them back, in the order they appear:
+
+```kotlin
+val document = Esf.loadDocument(data, catalog)
+document.fits // what load() returns
+for (extra in document.extra) {
+    when (extra) {
+        is Extra.Text -> extra.name // "fleet"; also version, and text: the block body as written
+        is Extra.Binary -> extra.field // the field number; also bytes, its content
+    }
+}
+```
+
+To write such data, add it after the fits. Two documents joined together are
+one document:
+
+```kotlin
+val text = Esf.save(fits, catalog) + "%fleet/1\n...\n"
+val data = Esf.saveBinary(fits, catalog) + Esf.binaryField(2, fleetBytes)
+```
+
+`binaryField()` throws `IllegalArgumentException` for field 1, which holds the
+fits, or a number that is not a valid field.
+
 ## Fits
 
 An `EsfFit` is one fit: `hull`, `name`, tactical `mode` and its `entries`.
@@ -140,7 +168,7 @@ Only a ship, structure or container can be a fit's hull. Check
 The test cases live in [esf-format](https://github.com/EVEShipFit/esf-format):
 
 ```
-git clone --branch v1.0 https://github.com/EVEShipFit/esf-format
+git clone --branch load-document https://github.com/EVEShipFit/esf-format
 ./gradlew program
 uv run --project esf-format/tools esf-test -- build/program
 ./gradlew ktlintCheck

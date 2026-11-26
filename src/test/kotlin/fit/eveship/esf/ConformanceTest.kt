@@ -2,6 +2,7 @@ package fit.eveship.esf
 
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
+import org.tomlj.Toml
 import java.io.File
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -41,5 +42,27 @@ class ConformanceTest {
         assertEquals(canonical, Esf.save(Esf.load(canonical, catalog), catalog), "canonical of canonical.esf")
         assertContentEquals(binary, Esf.saveBinary(fits, catalog), "binary of input")
         assertEquals(canonical, Esf.save(Esf.load(binary, catalog), catalog), "canonical of canonical.b64")
+
+        val document = Esf.loadDocument(input, catalog)
+        assertEquals(fits, document.fits, "fits of loadDocument")
+        assertEquals(extra(path), document.extra, "extra of loadDocument")
+    }
+
+    private fun extra(path: File): List<Extra> {
+        val file = File(path, "extra.toml")
+        if (!file.isFile) {
+            return emptyList()
+        }
+        val toml = Toml.parse(file.toPath())
+        check(!toml.hasErrors()) { toml.errors().toString() }
+        val list = toml.getArray("extra")!!
+        return (0 until list.size()).map { i ->
+            val item = list.getTable(i)
+            if (item.contains("field")) {
+                Extra.Binary(item.getLong("field")!!.toInt(), Esf.fromBase64Url(item.getString("bytes")!!))
+            } else {
+                Extra.Text(item.getString("name")!!, item.getLong("version")!!, item.getString("text")!!)
+            }
+        }
     }
 }
