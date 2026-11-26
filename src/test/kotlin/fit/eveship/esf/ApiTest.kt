@@ -28,6 +28,7 @@ private const val SMALL_SECURE_CONTAINER = 3467
 private const val NYX = 23913
 private const val TEMPLAR = 40556
 private const val FIRBOLG = 40558
+private const val MAX_FIELD = (1 shl 29) - 1
 
 private fun fit(vararg entries: Entry) = EsfFit(RIFTER, entries = entries.toList())
 
@@ -267,6 +268,67 @@ class ApiTest {
         val e =
             assertFailsWith<IllegalStateException> { Esf.load("%esf/1\nRifter\nDamage Control II +Decayed\n", broken) }
         assertContains(e.message!!, "no attribute")
+    }
+
+    @Test
+    fun loadDocumentText() {
+        val document =
+            Esf.loadDocument(
+                "%fleet/1\r\nx\r\n%esf/1\nRifter\n %note/007 \n\n%esf/1\n- \"a\"\n%end/4294967295",
+                catalog,
+            )
+        assertEquals(listOf(EsfFit(RIFTER), EsfFit(name = "a")), document.fits)
+        assertEquals(
+            listOf(Extra.Text("fleet", 1, "x\r\n"), Extra.Text("note", 7, "\n"), Extra.Text("end", 4294967295, "")),
+            document.extra,
+        )
+    }
+
+    @Test
+    fun loadDocumentWithoutExtra() {
+        assertEquals(Document(listOf(EsfFit(RIFTER)), emptyList()), Esf.loadDocument("%esf/1\nRifter\n", catalog))
+    }
+
+    @Test
+    fun loadDocumentHugeVersion() {
+        val data = "%esf/1\nRifter\n%fleet/99999999999\n"
+        assertEquals(listOf(EsfFit(RIFTER)), Esf.load(data, catalog))
+        val e = assertFailsWith<EsfFormatException> { Esf.loadDocument(data, catalog) }
+        assertEquals(3, e.lineNumber)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["%esf/2\nRifter\n", "%esf/1\nRifter\n%fleet/4294967296\n", "%fleet/1\n"])
+    fun loadDocumentInvalid(data: String) {
+        assertFailsWith<EsfFormatException> { Esf.loadDocument(data, catalog) }
+    }
+
+    @Test
+    fun binaryField() {
+        val fits = listOf(fit(Entry(AUTOCANNON)))
+        val data =
+            Esf.binaryField(2, byteArrayOf(1, 2)) + Esf.saveBinary(fits, catalog) +
+                Esf.binaryField(MAX_FIELD, byteArrayOf()) + byteArrayOf(0x10, 0x01)
+        val document = Esf.loadDocument(data, catalog)
+        assertEquals(Esf.load(data, catalog), document.fits)
+        assertEquals(listOf(Extra.Binary(2, byteArrayOf(1, 2)), Extra.Binary(MAX_FIELD, byteArrayOf())), document.extra)
+        assertContentEquals(byteArrayOf(0x12, 0x02, 1, 2), Esf.binaryField(2, byteArrayOf(1, 2)))
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [-1, 0, 1, MAX_FIELD + 1])
+    fun binaryFieldInvalid(field: Int) {
+        assertFailsWith<IllegalArgumentException> { Esf.binaryField(field, byteArrayOf()) }
+    }
+
+    @Test
+    fun extraBinaryEquality() {
+        val extra = Extra.Binary(2, byteArrayOf(1))
+        assertEquals(Extra.Binary(2, byteArrayOf(1)).hashCode(), extra.hashCode())
+        assertFalse(extra == Extra.Binary(3, byteArrayOf(1)))
+        assertFalse(extra == Extra.Binary(2, byteArrayOf(2)))
+        assertFalse(extra.equals(Extra.Text("a", 1, "")))
+        assertEquals("Binary(field=2, bytes=[1])", extra.toString())
     }
 
     @Test

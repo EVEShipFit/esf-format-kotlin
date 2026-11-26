@@ -47,3 +47,11 @@ internal class TypeRef(
     val name: String,
     val id: Long? = null,
 )
+
+/** A block whose header is not `%esf/N`, with its version as written. */
+internal class ForeignBlock(
+    val number: Int,
+    val name: String,
+    val version: String,
+    val text: String,
+)
